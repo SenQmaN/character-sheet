@@ -73,7 +73,10 @@
           <input class="profile-field" id="field-class" type="text" data-i18n-ph="phClass" placeholder="Class" />
           <input class="profile-field small" id="field-level" type="number" data-i18n-ph="phLvl" placeholder="Lvl" min="1" max="20" />
         </div>
-        <input class="profile-field" id="field-pfp-url" type="url" data-i18n-ph="phPfpUrl" placeholder="Image URL for Discord (https://...)" />
+        <div style="display:flex; gap:8px;">
+          <input class="profile-field" id="field-pfp-url" type="url" data-i18n-ph="phPfpUrl" placeholder="Image URL for Discord (https://...)" style="flex:1;" />
+          <button class="btn btn-ghost" id="btn-upload-imgbb" style="padding: 0 10px; font-size: 14px;" title="Upload local picture to get a Discord link">☁️ Upload</button>
+        </div>
       </div>
     </section>
 

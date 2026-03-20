@@ -621,6 +621,50 @@
       };
       reader.readAsDataURL(file);
     });
+
+    // ImgBB Auto-Uploader
+    document.getElementById('btn-upload-imgbb').addEventListener('click', async () => {
+      const char = getActiveChar();
+      if (!char || !char.pfp || char.pfp.startsWith('http')) {
+        alert(currentLang === 'ru' ? 'Сначала прикрепите локальное изображение(кликните на аватар в левом верхнем углу)' : 'Please select a local image (click on the avatar in top left corner)');
+        return;
+      }
+      
+      const btn = document.getElementById('btn-upload-imgbb');
+      const originalText = btn.textContent;
+      btn.textContent = '⏳...';
+      btn.disabled = true;
+      
+      try {
+        const base64Data = char.pfp.split(',')[1];
+        if (!base64Data) throw new Error('Invalid image format');
+        
+        const form = new FormData();
+        form.append('key', 'a8561fad24ac2633b4450240d5337dc1');
+        form.append('image', base64Data);
+        
+        const res = await fetch('https://api.imgbb.com/1/upload', {
+          method: 'POST',
+          body: form
+        });
+        
+        const data = await res.json();
+        if (data.success && data.data.url) {
+          const url = data.data.url;
+          char.pfpUrl = url;
+          document.getElementById('field-pfp-url').value = url;
+          saveData();
+          btn.textContent = '✅';
+          setTimeout(() => { btn.textContent = originalText; btn.disabled = false; }, 2000);
+        } else {
+          throw new Error(data.error?.message || 'Upload failed');
+        }
+      } catch (err) {
+        alert('Upload Error: ' + err.message);
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    });
   }
 
   // ── Dice Modal ────────────────────────────────────
