@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D&D Character Sheet Manager</title>
+  <meta name="description" content="Manage your D&D 5e characters, track stats, and send dice results to Discord via webhook." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══ CHARACTER LIST VIEW ═══ -->
+  <div id="view-list" class="view active">
+    <header class="list-header">
+      <h1 class="app-title">D&D Characters</h1>
+      <p class="app-subtitle" data-i18n="subtitle">Manage your heroes</p>
+    </header>
+
+    <div class="list-toolbar">
+      <button class="btn btn-primary" id="btn-create-char">
+        <span class="btn-icon">＋</span> <span data-i18n="newChar">New Character</span>
+      </button>
+      <button class="btn btn-ghost" id="btn-webhook-global">
+        <span class="btn-icon">⚙</span> <span data-i18n="webhookSettings">Webhook Settings</span>
+      </button>
+      <button class="btn btn-ghost" id="btn-lang-toggle">
+        🌐 <span id="lang-label">RU</span>
+      </button>
+    </div>
+
+    <div class="char-grid" id="char-grid">
+      <!-- Cards injected by JS -->
+    </div>
+  </div>
+
+  <!-- ═══ CHARACTER SHEET VIEW ═══ -->
+  <div id="view-sheet" class="view">
+    <!-- Top Bar -->
+    <div class="sheet-topbar">
+      <button class="btn btn-ghost btn-back" id="btn-back">
+        ← <span data-i18n="backChars">Characters</span>
+      </button>
+      <div class="sheet-topbar-actions">
+        <button class="btn btn-accent btn-dice-open" id="btn-dice-open">
+          🎲 <span data-i18n="dice">Dice</span>
+        </button>
+        <button class="btn btn-ghost" id="btn-webhook-sheet">
+          ⚙ <span data-i18n="webhookSettings">Webhook Settings</span>
+        </button>
+        <button class="btn btn-ghost" id="btn-lang-toggle-sheet">
+          🌐 <span id="lang-label-sheet">RU</span>
+        </button>
+        <button class="btn btn-ghost btn-delete-char" id="btn-delete-char">
+          🗑 <span data-i18n="delete">Delete</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Section -->
+    <section class="sheet-profile" id="sheet-profile">
+      <div class="profile-pfp-wrap" id="pfp-wrap">
+        <img class="profile-pfp" id="profile-pfp" src="" alt="Character" />
+        <div class="pfp-overlay" id="pfp-overlay">📷 <span data-i18n="changePfp">Change</span></div>
+        <input type="file" id="pfp-input" accept="image/*" hidden />
+      </div>
+      <div class="profile-info">
+        <input class="profile-name" id="profile-name" type="text" data-i18n-ph="phCharName" placeholder="Character Name" />
+        <div class="profile-details-row">
+          <input class="profile-field" id="field-race" type="text" data-i18n-ph="phRace" placeholder="Race" />
+          <input class="profile-field" id="field-class" type="text" data-i18n-ph="phClass" placeholder="Class" />
+          <input class="profile-field small" id="field-level" type="number" data-i18n-ph="phLvl" placeholder="Lvl" min="1" max="20" />
+        </div>
+        <input class="profile-field" id="field-pfp-url" type="url" data-i18n-ph="phPfpUrl" placeholder="Image URL for Discord (https://...)" />
+      </div>
+    </section>
+
+    <!-- Core Stats -->
+    <section class="sheet-section">
+      <h2 class="section-title" data-i18n="abilityScores">Ability Scores</h2>
+      <div class="ability-grid" id="ability-grid">
+        <!-- 6 ability score blocks injected by JS -->
+      </div>
+    </section>
+
+
+
+    <!-- Saving Throws -->
+    <section class="sheet-section">
+      <h2 class="section-title" data-i18n="savingThrows">Saving Throws</h2>
+      <div class="saves-list" id="saves-list">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+    <!-- Skills -->
+    <section class="sheet-section">
+      <h2 class="section-title" data-i18n="skills">Skills</h2>
+      <div class="skills-list" id="skills-list">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+
+    <!-- Notes -->
+    <section class="sheet-section">
+      <h2 class="section-title" data-i18n="notes">Notes</h2>
+      <textarea class="text-area full" id="text-notes" rows="4" data-i18n-ph="phNotes" placeholder="Additional notes..."></textarea>
+    </section>
+  </div>
+
+  <!-- ═══ DICE MODAL ═══ -->
+  <div class="modal-overlay" id="dice-modal" style="display:none;">
+    <div class="modal dice-modal">
+      <div class="modal-header">
+        <h2>🎲 <span data-i18n="diceRoll">Dice Roll</span></h2>
+        <button class="modal-close" id="dice-close">✕</button>
+      </div>
+
+      <div class="dice-config">
+        <!-- Die type -->
+        <div class="dice-row">
+          <label class="dice-label" data-i18n="dieType">Die Type</label>
+          <div class="die-type-btns" id="die-type-btns">
+            <button class="die-btn active" data-die="4">d4</button>
+            <button class="die-btn" data-die="6">d6</button>
+            <button class="die-btn" data-die="8">d8</button>
+            <button class="die-btn" data-die="10">d10</button>
+            <button class="die-btn" data-die="12">d12</button>
+            <button class="die-btn" data-die="20">d20</button>
+            <button class="die-btn" data-die="100">d100</button>
+          </div>
+        </div>
+
+        <!-- Number of dice -->
+        <div class="dice-row">
+          <label class="dice-label" data-i18n="numDice">Number of Dice</label>
+          <div class="dice-count-row">
+            <button class="dice-count-btn" id="dice-minus">−</button>
+            <span class="dice-count-val" id="dice-count">1</span>
+            <button class="dice-count-btn" id="dice-plus">+</button>
+          </div>
+        </div>
+
+        <!-- Modifier -->
+        <div class="dice-row">
+          <label class="dice-label" data-i18n="modifier">Modifier</label>
+          <input class="dice-modifier-input" id="dice-modifier" type="number" value="0" />
+        </div>
+
+        <!-- Formula preview -->
+        <div class="dice-formula" id="dice-formula">1d4</div>
+      </div>
+
+      <!-- Result selection grids -->
+      <div class="dice-results-area" id="dice-results-area">
+        <!-- For each die, a grid of numbers to pick from -->
+      </div>
+
+      <!-- Total -->
+      <div class="dice-total-row" id="dice-total-row" style="display:none;">
+        <span class="dice-total-label" data-i18n="total">Total:</span>
+        <span class="dice-total-value" id="dice-total-value">0</span>
+      </div>
+
+      <!-- Send -->
+      <button class="btn btn-primary btn-send-dice" id="btn-send-dice" disabled>
+        <span data-i18n="sendDiscord">Send to Discord</span>
+      </button>
+      <div class="dice-status" id="dice-status"></div>
+    </div>
+  </div>
+
+  <!-- ═══ SKILL ROLL MODAL ═══ -->
+  <div class="modal-overlay" id="skill-roll-modal" style="display:none;">
+    <div class="modal skill-roll-modal">
+      <div class="modal-header">
+        <h2>🎯 <span id="skill-roll-title" data-i18n="skillCheck">Skill Check</span></h2>
+        <button class="modal-close" id="skill-roll-close">✕</button>
+      </div>
+
+      <!-- Skill name display -->
+      <div class="skill-roll-skill-name" id="skill-roll-skill-name">Acrobatics</div>
+
+      <!-- Modifier selector -->
+      <div class="dice-row">
+        <label class="dice-label" data-i18n="modifier">Modifier</label>
+        <div class="skill-mod-selector" id="skill-mod-selector">
+          <!-- Buttons from -5 to +10 injected by JS -->
+        </div>
+      </div>
+
+      <!-- d20 result selector -->
+      <div class="dice-row">
+        <label class="dice-label"><span data-i18n="selectResult">Select result</span> (d20)</label>
+        <div class="dice-number-grid" id="skill-roll-d20-grid">
+          <!-- 1-20 buttons injected by JS -->
+        </div>
+      </div>
+
+      <!-- Total -->
+      <div class="dice-total-row" id="skill-roll-total-row" style="display:none;">
+        <span class="dice-total-label" data-i18n="total">Total:</span>
+        <span class="dice-total-value" id="skill-roll-total-value">0</span>
+      </div>
+
+      <!-- Send -->
+      <button class="btn btn-primary btn-send-dice" id="btn-send-skill-roll" disabled>
+        <span data-i18n="sendDiscord">Send to Discord</span>
+      </button>
+      <div class="dice-status" id="skill-roll-status"></div>
+    </div>
+  </div>
+
+  <!-- ═══ WEBHOOK MODAL ═══ -->
+  <div class="modal-overlay" id="webhook-modal" style="display:none;">
+    <div class="modal webhook-modal">
+      <div class="modal-header">
+        <h2>⚙ <span data-i18n="webhookSettings">Webhook Settings</span></h2>
+        <button class="modal-close" id="webhook-close">✕</button>
+      </div>
+      <div class="webhook-body">
+        <label class="webhook-label">Discord Webhook URL</label>
+        <input class="webhook-input" id="webhook-url" type="url" placeholder="https://discord.com/api/webhooks/..." />
+        <p class="webhook-hint" data-i18n="webhookHint">This webhook will be used to send dice roll results for all characters.</p>
+        <div class="webhook-actions">
+          <button class="btn btn-ghost" id="btn-webhook-test">🔗 <span data-i18n="testConn">Test Connection</span></button>
+          <button class="btn btn-primary" id="btn-webhook-save" data-i18n="save">Save</button>
+        </div>
+        <div class="webhook-status" id="webhook-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DELETE CONFIRM MODAL ═══ -->
+  <div class="modal-overlay" id="delete-modal" style="display:none;">
+    <div class="modal delete-modal">
+      <div class="modal-header">
+        <h2>⚠ <span data-i18n="deleteChar">Delete Character</span></h2>
+        <button class="modal-close" id="delete-close">✕</button>
+      </div>
+      <p class="delete-text">Are you sure you want to delete <strong id="delete-name"></strong>? This cannot be undone.</p>
+      <div class="delete-actions">
+        <button class="btn btn-ghost" id="btn-delete-cancel" data-i18n="cancel">Cancel</button>
+        <button class="btn btn-danger" id="btn-delete-confirm" data-i18n="delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
