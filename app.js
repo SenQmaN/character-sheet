@@ -794,9 +794,9 @@
     else if (diceModifier < 0) formulaStr += ` – ${Math.abs(diceModifier)}`;
 
     let titleStr = `Бросок — ${total}`;
-    if (diceType === 20 && diceCount === 1) {
-      if (diceResults[0] === 20) titleStr = `🔥 ${titleStr} 🔥`;
-      if (diceResults[0] === 1) titleStr = `🩸 ${titleStr} 🩸`;
+    if (diceType === 20) {
+      if (diceResults.includes(20)) titleStr = `🔥 ${titleStr} 🔥`;
+      else if (diceResults.includes(1)) titleStr = `🩸 ${titleStr} 🩸`;
     }
 
     const embed = {
