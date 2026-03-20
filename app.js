@@ -485,8 +485,8 @@
       color: 0x5865F2,
     };
 
-    if (char.pfp && char.pfp.startsWith('http')) {
-      embed.thumbnail = { url: char.pfp };
+    if (char.pfpUrl && char.pfpUrl.startsWith('http')) {
+      embed.thumbnail = { url: char.pfpUrl };
     }
 
     const body = { embeds: [embed] };
@@ -531,6 +531,7 @@
       { sel: '#field-race', key: 'race' },
       { sel: '#field-class', key: 'class' },
       { sel: '#field-level', key: 'level', num: true },
+      { sel: '#field-pfp-url', key: 'pfpUrl' },
     ];
 
     for (const f of profileFields) {
@@ -791,8 +792,8 @@
       color: 0x5865F2,
     };
 
-    if (char.pfp && char.pfp.startsWith('http')) {
-      embed.thumbnail = { url: char.pfp };
+    if (char.pfpUrl && char.pfpUrl.startsWith('http')) {
+      embed.thumbnail = { url: char.pfpUrl };
     }
 
     const body = { embeds: [embed] };
