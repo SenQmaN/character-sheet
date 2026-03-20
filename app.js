@@ -180,7 +180,6 @@
     const char = getActiveChar();
     if (char) {
       buildAbilityGrid(char);
-      buildSavesList(char);
       buildSkillsList(char);
     }
   }
@@ -203,7 +202,6 @@
       pfp: '',
       pfpUrl: '',
       abilities: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
-      saveProficiencies: [],
       skillProficiencies: [],
       profBonus: 2,
       text: { notes: '' },
@@ -291,7 +289,6 @@
     $('#field-pfp-url').value = char.pfpUrl || '';
 
     buildAbilityGrid(char);
-    buildSavesList(char);
     buildSkillsList(char);
 
     $('#text-notes').value = char.text.notes || '';
@@ -314,27 +311,6 @@
         <span class="ability-mod" data-ability-mod="${ab}">${modStr(mod)}</span>
       `;
       grid.appendChild(box);
-    }
-  }
-
-  // ── Saving Throws ─────────────────────────────────
-  function buildSavesList(char) {
-    const list = $('#saves-list');
-    list.innerHTML = '';
-    for (const ab of ABILITIES) {
-      const prof = char.saveProficiencies.includes(ab);
-      const mod = abilityMod(char.abilities[ab]) + (prof ? char.profBonus : 0);
-      const row = document.createElement('div');
-      row.className = 'save-row';
-      row.innerHTML = `
-        <label class="save-check">
-          <input type="checkbox" data-save="${ab}" ${prof ? 'checked' : ''} />
-          <span class="dot"></span>
-        </label>
-        <span class="save-name">${ABILITY_FULL_I18N[currentLang][ab]}</span>
-        <span class="save-val" data-save-val="${ab}">${modStr(mod)}</span>
-      `;
-      list.appendChild(row);
     }
   }
 
@@ -554,23 +530,7 @@
       const mod = abilityMod(val);
       document.querySelector(`[data-ability-mod="${ab}"]`).textContent = modStr(mod);
       saveData();
-      buildSavesList(char);
       buildSkillsList(char);
-    });
-
-    // Saving throw proficiencies (delegated)
-    document.addEventListener('change', (e) => {
-      if (!e.target.matches('[data-save]')) return;
-      const char = getActiveChar();
-      if (!char) return;
-      const ab = e.target.dataset.save;
-      if (e.target.checked) {
-        if (!char.saveProficiencies.includes(ab)) char.saveProficiencies.push(ab);
-      } else {
-        char.saveProficiencies = char.saveProficiencies.filter(a => a !== ab);
-      }
-      saveData();
-      buildSavesList(char);
     });
 
     // Skill proficiencies (delegated)
