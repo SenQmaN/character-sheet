@@ -454,10 +454,14 @@
     if (mod > 0) formulaStr += ` + ${mod}`;
     else if (mod < 0) formulaStr += ` – ${Math.abs(mod)}`;
 
+    let titleStr = `${t.checkOf} ${skillDisplayName} — ${total}`;
+    if (d20 === 20) titleStr = `🔥 ${titleStr} 🔥`;
+    if (d20 === 1) titleStr = `🩸 ${titleStr} 🩸`;
+
     const embed = {
       author: { name: char.name },
-      title: `${t.checkOf} ${skillDisplayName} — ${total}`,
-      description: `${breakdownStr}\n${formulaStr}`,
+      title: titleStr,
+      description: `${breakdownStr}\n\n${formulaStr}`,
       color: 0x5865F2,
     };
 
@@ -789,10 +793,16 @@
     if (diceModifier > 0) formulaStr += ` + ${diceModifier}`;
     else if (diceModifier < 0) formulaStr += ` – ${Math.abs(diceModifier)}`;
 
+    let titleStr = `Бросок — ${total}`;
+    if (diceType === 20 && diceCount === 1) {
+      if (diceResults[0] === 20) titleStr = `🔥 ${titleStr} 🔥`;
+      if (diceResults[0] === 1) titleStr = `🩸 ${titleStr} 🩸`;
+    }
+
     const embed = {
       author: { name: char.name },
-      title: `Бросок — ${total}`,
-      description: `${breakdownStr}\n${formulaStr}`,
+      title: titleStr,
+      description: `${breakdownStr}\n\n${formulaStr}`,
       color: 0x5865F2,
     };
 
