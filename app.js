@@ -639,13 +639,13 @@
         const base64Data = char.pfp.split(',')[1];
         if (!base64Data) throw new Error('Invalid image format');
         
-        const form = new FormData();
-        form.append('key', 'a8561fad24ac2633b4450240d5337dc1');
-        form.append('image', base64Data);
+        const params = new URLSearchParams();
+        params.append('key', 'a8561fad24ac2633b4450240d5337dc1');
+        params.append('image', base64Data);
         
         const res = await fetch('https://api.imgbb.com/1/upload', {
           method: 'POST',
-          body: form
+          body: params
         });
         
         const data = await res.json();
