@@ -24,6 +24,7 @@
       abilityScores: 'Ability Scores',
       savingThrows: 'Saving Throws',
       skills: 'Skills',
+      passiveSenses: 'Passive Senses',
 
       notes: 'Notes',
       diceRoll: 'Dice Roll', dieType: 'Die Type', numDice: 'Number of Dice',
@@ -51,6 +52,7 @@
       abilityScores: 'Характеристики',
       savingThrows: 'Спасброски',
       skills: 'Навыки',
+      passiveSenses: 'Пассивные чувства',
 
       notes: 'Заметки',
       diceRoll: 'Бросок кости', dieType: 'Тип кости', numDice: 'Количество костей',
@@ -76,7 +78,7 @@
 
   const SKILLS_I18N = {
     en: { 'Acrobatics': 'Acrobatics', 'Animal Handling': 'Animal Handling', 'Arcana': 'Arcana', 'Athletics': 'Athletics', 'Deception': 'Deception', 'History': 'History', 'Insight': 'Insight', 'Intimidation': 'Intimidation', 'Investigation': 'Investigation', 'Medicine': 'Medicine', 'Nature': 'Nature', 'Perception': 'Perception', 'Performance': 'Performance', 'Persuasion': 'Persuasion', 'Religion': 'Religion', 'Sleight of Hand': 'Sleight of Hand', 'Stealth': 'Stealth', 'Survival': 'Survival' },
-    ru: { 'Acrobatics': 'Акробатика', 'Animal Handling': 'Уход за животными', 'Arcana': 'Магия', 'Athletics': 'Атлетика', 'Deception': 'Обман', 'History': 'История', 'Insight': 'Проницательность', 'Intimidation': 'Запугивание', 'Investigation': 'Расследование', 'Medicine': 'Медицина', 'Nature': 'Природа', 'Perception': 'Восприятие', 'Performance': 'Выступление', 'Persuasion': 'Убеждение', 'Religion': 'Религия', 'Sleight of Hand': 'Ловкость рук', 'Stealth': 'Скрытность', 'Survival': 'Выживание' },
+    ru: { 'Acrobatics': 'Акробатика', 'Animal Handling': 'Уход за животными', 'Arcana': 'Магия', 'Athletics': 'Атлетика', 'Deception': 'Обман', 'History': 'История', 'Insight': 'Проницательность', 'Intimidation': 'Запугивание', 'Investigation': 'Анализ', 'Medicine': 'Медицина', 'Nature': 'Природа', 'Perception': 'Восприятие', 'Performance': 'Выступление', 'Persuasion': 'Убеждение', 'Religion': 'Религия', 'Sleight of Hand': 'Ловкость рук', 'Stealth': 'Скрытность', 'Survival': 'Выживание' },
   };
 
   const ABILITIES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
@@ -181,6 +183,7 @@
     if (char) {
       buildAbilityGrid(char);
       buildSkillsList(char);
+      buildPassivesList(char);
     }
   }
 
@@ -290,6 +293,7 @@
 
     buildAbilityGrid(char);
     buildSkillsList(char);
+    buildPassivesList(char);
 
     $('#text-notes').value = char.text.notes || '';
 
@@ -337,7 +341,39 @@
     }
   }
 
+  // ── Passive Senses ────────────────────────────────
+  function buildPassivesList(char) {
+    const list = $('#passives-list');
+    if (!list) return;
+    list.innerHTML = '';
+    const passives = [
+      { name: 'Perception', label: currentLang === 'ru' ? 'МУДРОСТЬ (ВОСПРИЯТИЕ)' : 'WISDOM (PERCEPTION)' },
+      { name: 'Insight', label: currentLang === 'ru' ? 'МУДРОСТЬ (ПРОНИЦАТЕЛЬНОСТЬ)' : 'WISDOM (INSIGHT)' },
+      { name: 'Investigation', label: currentLang === 'ru' ? 'ИНТЕЛЛЕКТ (АНАЛИЗ)' : 'INTELLIGENCE (INVESTIGATION)' }
+    ];
+    for (const p of passives) {
+      const sk = SKILLS.find(s => s.name === p.name);
+      const prof = char.skillProficiencies.includes(sk.name);
+      const mod = abilityMod(char.abilities[sk.ability]) + (prof ? char.profBonus : 0);
+      const score = 10 + mod;
+      
+      const row = document.createElement('div');
+      row.className = 'passive-row';
+      row.style.display = 'flex';
+      row.style.background = '#1a1a24';
+      row.style.border = '1px solid #333344';
+      row.style.borderRadius = '4px';
+      row.style.marginBottom = '6px';
+      row.style.padding = '6px 10px';
+      row.style.alignItems = 'center';
 
+      row.innerHTML = `
+        <div style="font-weight:bold; font-size:16px; min-width:30px; text-align:center; padding-right:10px; border-right:1px solid #333344; margin-right:10px;">${score}</div>
+        <div style="font-size:12px; font-weight:600; letter-spacing:0.5px; opacity:0.8;">${p.label}</div>
+      `;
+      list.appendChild(row);
+    }
+  }
 
   // ── Skill Roll Modal State ────────────────────────
   let skillRollName = '';
@@ -535,6 +571,7 @@
       document.querySelector(`[data-ability-mod="${ab}"]`).textContent = modStr(mod);
       saveData();
       buildSkillsList(char);
+      buildPassivesList(char);
     });
 
     // Skill proficiencies (delegated)
@@ -550,6 +587,7 @@
       }
       saveData();
       buildSkillsList(char);
+      buildPassivesList(char);
     });
 
     // Skill roll buttons (delegated)
