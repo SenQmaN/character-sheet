@@ -505,12 +505,13 @@
     if (d20 === 20) titleStr = `🔥 ${titleStr} 🔥`;
     if (d20 === 1) titleStr = `🩸 ${titleStr} 🩸`;
 
+    const colorInt = parseInt(webhookColor.replace(/^#/, ''), 16);
     const embed = {
       author: { name: char.name },
       title: titleStr,
       description: breakdownStr,
       footer: { text: formulaStr },
-      color: parseInt(webhookColor.replace('#', ''), 16),
+      color: isNaN(colorInt) ? 0x5865F2 : colorInt,
     };
 
     if (char.pfpUrl && char.pfpUrl.startsWith('http')) {
@@ -849,12 +850,13 @@
       else if (diceResults.includes(1)) titleStr = `🩸 ${titleStr} 🩸`;
     }
 
+    const colorInt = parseInt(webhookColor.replace(/^#/, ''), 16);
     const embed = {
       author: { name: char.name },
       title: titleStr,
       description: breakdownStr,
       footer: { text: formulaStr },
-      color: parseInt(webhookColor.replace('#', ''), 16),
+      color: isNaN(colorInt) ? 0x5865F2 : colorInt,
     };
 
     if (char.pfpUrl && char.pfpUrl.startsWith('http')) {
@@ -911,26 +913,41 @@
       if (e.target === webhookModal) closeWebhookModal();
     });
 
-    $('#webhook-color').addEventListener('input', (e) => {
-      $('#webhook-color-text').value = e.target.value.toUpperCase();
-    });
+    const syncTextToColor = () => {
+      $('#webhook-color-text').value = $('#webhook-color').value.toUpperCase();
+    };
+    $('#webhook-color').addEventListener('input', syncTextToColor);
+    $('#webhook-color').addEventListener('change', syncTextToColor);
 
     $('#webhook-color-text').addEventListener('input', (e) => {
       let val = e.target.value.trim();
-      if (!val.startsWith('#') && val.length > 0) val = '#' + val;
-      if (/^#[0-9A-F]{6}$/i.test(val)) {
+      if (val.length === 6 && !val.startsWith('#')) {
+        val = '#' + val;
+      }
+      if (/^#[0-9a-f]{6}$/i.test(val)) {
         $('#webhook-color').value = val;
+      }
+    });
+
+    $('#webhook-color-text').addEventListener('blur', (e) => {
+      let val = e.target.value.trim();
+      if (val.length === 6 && !val.startsWith('#')) val = '#' + val;
+      if (/^#[0-9a-f]{6}$/i.test(val)) {
+        e.target.value = val.toUpperCase();
+        $('#webhook-color').value = val;
+      } else {
+        e.target.value = $('#webhook-color').value.toUpperCase();
       }
     });
 
     $('#btn-webhook-save').addEventListener('click', () => {
       webhookUrl = $('#webhook-url').value.trim();
       let colorText = $('#webhook-color-text').value.trim();
-      if (!colorText.startsWith('#') && colorText.length > 0) colorText = '#' + colorText;
-      if (/^#[0-9A-F]{6}$/i.test(colorText)) {
+      if (colorText.length === 6 && !colorText.startsWith('#')) colorText = '#' + colorText;
+      if (/^#[0-9a-f]{6}$/i.test(colorText)) {
         webhookColor = colorText.toUpperCase();
       } else {
-        webhookColor = $('#webhook-color').value;
+        webhookColor = $('#webhook-color').value.toUpperCase();
       }
       saveData();
       $('#webhook-status').textContent = '✓ Saved!';
@@ -941,9 +958,11 @@
     $('#btn-webhook-test').addEventListener('click', async () => {
       const url = $('#webhook-url').value.trim();
       let colorText = $('#webhook-color-text').value.trim();
-      if (!colorText.startsWith('#') && colorText.length > 0) colorText = '#' + colorText;
-      let finalColor = /^#[0-9A-F]{6}$/i.test(colorText) ? colorText : $('#webhook-color').value;
-      const colorHex = parseInt(finalColor.replace('#', ''), 16);
+      if (colorText.length === 6 && !colorText.startsWith('#')) colorText = '#' + colorText;
+      let finalColor = /^#[0-9a-f]{6}$/i.test(colorText) ? colorText : $('#webhook-color').value;
+      const colorInt = parseInt(finalColor.replace(/^#/, ''), 16);
+      const colorHex = isNaN(colorInt) ? 0x5865F2 : colorInt;
+
       if (!url) {
         $('#webhook-status').textContent = '⚠ Enter a URL first';
         $('#webhook-status').className = 'webhook-status error';
