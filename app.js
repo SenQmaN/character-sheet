@@ -9,6 +9,7 @@
   // ── Constants ─────────────────────────────────────
   const STORAGE_KEY = 'dnd_characters';
   const WEBHOOK_KEY = 'dnd_webhook_url';
+  const WEBHOOK_COLOR_KEY = 'dnd_webhook_color';
   const LANG_KEY = 'dnd_lang';
 
   // ── i18n ───────────────────────────────────────────
@@ -17,6 +18,7 @@
       subtitle: 'Manage your heroes',
       newChar: 'New Character',
       webhookSettings: 'Webhook Settings',
+      webhookColor: 'Embed Color',
       backChars: 'Characters',
       dice: 'Dice',
       delete: 'Delete',
@@ -45,6 +47,7 @@
       subtitle: 'Управляйте своими героями',
       newChar: 'Новый персонаж',
       webhookSettings: 'Настройки вебхука',
+      webhookColor: 'Цвет сообщения',
       backChars: 'Персонажи',
       dice: 'Кости',
       delete: 'Удалить',
@@ -121,6 +124,7 @@
   let characters = [];
   let activeCharId = null;
   let webhookUrl = '';
+  let webhookColor = '#5865F2';
   let currentLang = 'en';
 
   // Dice state
@@ -156,12 +160,14 @@
       characters = raw ? JSON.parse(raw) : [];
     } catch { characters = []; }
     webhookUrl = localStorage.getItem(WEBHOOK_KEY) || '';
+    webhookColor = localStorage.getItem(WEBHOOK_COLOR_KEY) || '#5865F2';
     currentLang = localStorage.getItem(LANG_KEY) || 'en';
   }
 
   function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(characters));
     localStorage.setItem(WEBHOOK_KEY, webhookUrl);
+    localStorage.setItem(WEBHOOK_COLOR_KEY, webhookColor);
     localStorage.setItem(LANG_KEY, currentLang);
   }
 
@@ -504,7 +510,7 @@
       title: titleStr,
       description: breakdownStr,
       footer: { text: formulaStr },
-      color: 0x5865F2,
+      color: parseInt(webhookColor.replace('#', ''), 16),
     };
 
     if (char.pfpUrl && char.pfpUrl.startsWith('http')) {
@@ -848,7 +854,7 @@
       title: titleStr,
       description: breakdownStr,
       footer: { text: formulaStr },
-      color: 0x5865F2,
+      color: parseInt(webhookColor.replace('#', ''), 16),
     };
 
     if (char.pfpUrl && char.pfpUrl.startsWith('http')) {
@@ -887,6 +893,7 @@
   // ── Webhook Settings Modal ────────────────────────
   function openWebhookModal() {
     $('#webhook-url').value = webhookUrl;
+    $('#webhook-color').value = webhookColor;
     $('#webhook-status').textContent = '';
     webhookModal.style.display = 'flex';
   }
@@ -905,6 +912,7 @@
 
     $('#btn-webhook-save').addEventListener('click', () => {
       webhookUrl = $('#webhook-url').value.trim();
+      webhookColor = $('#webhook-color').value;
       saveData();
       $('#webhook-status').textContent = '✓ Saved!';
       $('#webhook-status').className = 'webhook-status success';
@@ -913,6 +921,7 @@
 
     $('#btn-webhook-test').addEventListener('click', async () => {
       const url = $('#webhook-url').value.trim();
+      const colorHex = parseInt($('#webhook-color').value.replace('#', ''), 16);
       if (!url) {
         $('#webhook-status').textContent = '⚠ Enter a URL first';
         $('#webhook-status').className = 'webhook-status error';
@@ -925,7 +934,13 @@
         const resp = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: '🎲 **Character Sheet** — Webhook connected successfully!' }),
+          body: JSON.stringify({
+            embeds: [{
+              title: '🎲 Character Sheet',
+              description: 'Webhook connected successfully!',
+              color: colorHex
+            }]
+          }),
         });
 
         if (resp.ok || resp.status === 204) {

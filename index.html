@@ -15,7 +15,7 @@
   <!-- ═══ CHARACTER LIST VIEW ═══ -->
   <div id="view-list" class="view active">
     <header class="list-header">
-      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.4</span></h1>
+      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.5</span></h1>
       <p class="app-subtitle" data-i18n="subtitle">Manage your heroes</p>
     </header>
 
@@ -228,6 +228,12 @@
       <div class="webhook-body">
         <label class="webhook-label">Discord Webhook URL</label>
         <input class="webhook-input" id="webhook-url" type="url" placeholder="https://discord.com/api/webhooks/..." />
+        
+        <div class="webhook-color-row" style="display: flex; align-items: center; justify-content: space-between; margin-top: 15px;">
+          <label class="webhook-label" style="margin-bottom: 0;" data-i18n="webhookColor">Embed Color</label>
+          <input type="color" id="webhook-color" value="#5865F2" style="background: none; border: none; cursor: pointer; width: 40px; height: 40px; padding: 0;" />
+        </div>
+
         <p class="webhook-hint" data-i18n="webhookHint">This webhook will be used to send dice roll results for all characters.</p>
         <div class="webhook-actions">
           <button class="btn btn-ghost" id="btn-webhook-test">🔗 <span data-i18n="testConn">Test Connection</span></button>
