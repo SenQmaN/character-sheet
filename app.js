@@ -1408,16 +1408,23 @@
         $('#webhook-status').textContent = 'Testing...';
         $('#webhook-status').className = 'webhook-status';
 
+        const char = getActiveChar();
+        const embed = {
+          title: currentLang === 'ru' ? 'Проверка систем' : 'System Check',
+          description: currentLang === 'ru' ? 'Всё работает в штатном режиме 👍' : 'Systems are fully operational 👍',
+          color: colorHex
+        };
+        if (char) {
+          embed.author = { name: char.name };
+          if (char.pfpUrl && char.pfpUrl.startsWith('http')) {
+            embed.thumbnail = { url: char.pfpUrl };
+          }
+        }
+
         const resp = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            embeds: [{
-              title: '🎲 Character Sheet',
-              description: 'Webhook connected successfully!',
-              color: colorHex
-            }]
-          }),
+          body: JSON.stringify({ embeds: [embed] }),
         });
 
         if (resp.ok || resp.status === 204) {
