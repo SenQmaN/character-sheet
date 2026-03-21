@@ -419,6 +419,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
   font-size: 0.85rem; outline: none; transition: border-color var(--transition);
 }
 .webhook-input:focus { border-color: var(--border-focus); }
+.webhook-input option { background: var(--bg-card); color: var(--text-main); }
 .webhook-hint { font-size: 0.72rem; color: var(--text-dim); margin: 8px 0 16px; }
 .webhook-actions { display: flex; gap: 10px; }
 .webhook-status { text-align: center; font-size: 0.78rem; margin-top: 12px; min-height: 20px; }
