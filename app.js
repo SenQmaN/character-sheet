@@ -894,6 +894,7 @@
   function openWebhookModal() {
     $('#webhook-url').value = webhookUrl;
     $('#webhook-color').value = webhookColor;
+    $('#webhook-color-text').value = webhookColor;
     $('#webhook-status').textContent = '';
     webhookModal.style.display = 'flex';
   }
@@ -910,9 +911,27 @@
       if (e.target === webhookModal) closeWebhookModal();
     });
 
+    $('#webhook-color').addEventListener('input', (e) => {
+      $('#webhook-color-text').value = e.target.value.toUpperCase();
+    });
+
+    $('#webhook-color-text').addEventListener('input', (e) => {
+      let val = e.target.value.trim();
+      if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+      if (/^#[0-9A-F]{6}$/i.test(val)) {
+        $('#webhook-color').value = val;
+      }
+    });
+
     $('#btn-webhook-save').addEventListener('click', () => {
       webhookUrl = $('#webhook-url').value.trim();
-      webhookColor = $('#webhook-color').value;
+      let colorText = $('#webhook-color-text').value.trim();
+      if (!colorText.startsWith('#') && colorText.length > 0) colorText = '#' + colorText;
+      if (/^#[0-9A-F]{6}$/i.test(colorText)) {
+        webhookColor = colorText.toUpperCase();
+      } else {
+        webhookColor = $('#webhook-color').value;
+      }
       saveData();
       $('#webhook-status').textContent = '✓ Saved!';
       $('#webhook-status').className = 'webhook-status success';
@@ -921,7 +940,10 @@
 
     $('#btn-webhook-test').addEventListener('click', async () => {
       const url = $('#webhook-url').value.trim();
-      const colorHex = parseInt($('#webhook-color').value.replace('#', ''), 16);
+      let colorText = $('#webhook-color-text').value.trim();
+      if (!colorText.startsWith('#') && colorText.length > 0) colorText = '#' + colorText;
+      let finalColor = /^#[0-9A-F]{6}$/i.test(colorText) ? colorText : $('#webhook-color').value;
+      const colorHex = parseInt(finalColor.replace('#', ''), 16);
       if (!url) {
         $('#webhook-status').textContent = '⚠ Enter a URL first';
         $('#webhook-status').className = 'webhook-status error';
