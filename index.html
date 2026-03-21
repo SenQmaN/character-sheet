@@ -15,7 +15,7 @@
   <!-- ═══ CHARACTER LIST VIEW ═══ -->
   <div id="view-list" class="view active">
     <header class="list-header">
-      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.16</span></h1>
+      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.17</span></h1>
       <p class="app-subtitle" data-i18n="subtitle">Manage your heroes</p>
     </header>
 
@@ -203,6 +203,18 @@
         <button class="modal-close" id="webhook-close">✕</button>
       </div>
       <div class="webhook-body">
+        <label class="webhook-label">Active Profile</label>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+          <select id="webhook-profile-select" class="webhook-input" style="flex:1; margin-bottom:0; padding:8px; cursor:pointer;">
+            <option value="">No Webhooks</option>
+          </select>
+          <button class="btn btn-ghost" id="btn-webhook-add" style="padding:0; width:36px; height:36px; border:1px solid var(--border);" title="New Profile">+</button>
+          <button class="btn btn-ghost" id="btn-webhook-delete" style="padding:0; width:36px; height:36px; border:1px solid var(--border); color:var(--red);" title="Delete Profile">✕</button>
+        </div>
+
+        <label class="webhook-label">Profile Name</label>
+        <input class="webhook-input" id="webhook-name" type="text" placeholder="e.g. Curse of Strahd" style="margin-bottom:12px;" />
+
         <label class="webhook-label">Discord Webhook URL</label>
         <input class="webhook-input" id="webhook-url" type="url" placeholder="https://discord.com/api/webhooks/..." />
         

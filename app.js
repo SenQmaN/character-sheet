@@ -10,6 +10,8 @@
   const STORAGE_KEY = 'dnd_characters';
   const WEBHOOK_KEY = 'dnd_webhook_url';
   const WEBHOOK_COLOR_KEY = 'dnd_webhook_color';
+  const WEBHOOKS_KEY = 'dnd_webhooks';
+  const ACTIVE_WEBHOOK_ID_KEY = 'dnd_active_webhook';
   const LANG_KEY = 'dnd_lang';
 
   // ── i18n ───────────────────────────────────────────
@@ -134,6 +136,8 @@
   let activeCharId = null;
   let webhookUrl = '';
   let webhookColor = '#5865F2';
+  let webhooks = [];
+  let activeWebhookId = null;
   let currentLang = 'en';
 
   // Dice state
@@ -167,16 +171,50 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       characters = raw ? JSON.parse(raw) : [];
     } catch { characters = []; }
-    webhookUrl = localStorage.getItem(WEBHOOK_KEY) || '';
-    webhookColor = localStorage.getItem(WEBHOOK_COLOR_KEY) || '#5865F2';
+    
     currentLang = localStorage.getItem(LANG_KEY) || 'en';
+
+    try {
+      const wRaw = localStorage.getItem(WEBHOOKS_KEY);
+      webhooks = wRaw ? JSON.parse(wRaw) : [];
+      
+      const oldUrl = localStorage.getItem(WEBHOOK_KEY);
+      const oldColor = localStorage.getItem(WEBHOOK_COLOR_KEY) || '#5865F2';
+      
+      if (webhooks.length === 0 && oldUrl) {
+        webhooks.push({ id: Date.now(), name: 'Default', url: oldUrl, color: oldColor });
+        localStorage.setItem(WEBHOOKS_KEY, JSON.stringify(webhooks));
+      }
+    } catch { webhooks = []; }
+
+    const savedId = localStorage.getItem(ACTIVE_WEBHOOK_ID_KEY);
+    activeWebhookId = savedId ? parseInt(savedId) : (webhooks.length > 0 ? webhooks[0].id : null);
+    
+    updateGlobalWebhookFromActive();
+  }
+
+  function updateGlobalWebhookFromActive() {
+    const active = webhooks.find(w => w.id === activeWebhookId);
+    if (active) {
+      webhookUrl = active.url;
+      webhookColor = active.color;
+    } else {
+      webhookUrl = '';
+      webhookColor = '#5865F2';
+    }
   }
 
   function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(characters));
+    localStorage.setItem(LANG_KEY, currentLang);
     localStorage.setItem(WEBHOOK_KEY, webhookUrl);
     localStorage.setItem(WEBHOOK_COLOR_KEY, webhookColor);
-    localStorage.setItem(LANG_KEY, currentLang);
+    localStorage.setItem(WEBHOOKS_KEY, JSON.stringify(webhooks));
+    if (activeWebhookId) {
+      localStorage.setItem(ACTIVE_WEBHOOK_ID_KEY, activeWebhookId.toString());
+    } else {
+      localStorage.removeItem(ACTIVE_WEBHOOK_ID_KEY);
+    }
   }
 
   // ── Language ───────────────────────────────────────
@@ -1329,10 +1367,60 @@
   }
 
   // ── Webhook Settings Modal ────────────────────────
+  let modalActiveWebhookId = null;
+
+  function renderWebhookProfileOptions() {
+    const sel = $('#webhook-profile-select');
+    sel.innerHTML = '';
+    
+    if (webhooks.length === 0) {
+      sel.innerHTML = '<option value="">No profiles</option>';
+      sel.disabled = true;
+      $('#btn-webhook-delete').disabled = true;
+      modalActiveWebhookId = null;
+      $('#webhook-name').value = '';
+      $('#webhook-url').value = '';
+      $('#webhook-color').value = '#5865F2';
+      $('#webhook-color-text').value = '#5865F2';
+      $('#webhook-name').disabled = true;
+      $('#webhook-url').disabled = true;
+      $('#webhook-color').disabled = true;
+      $('#webhook-color-text').disabled = true;
+      return;
+    }
+    
+    sel.disabled = false;
+    $('#btn-webhook-delete').disabled = false;
+    $('#webhook-name').disabled = false;
+    $('#webhook-url').disabled = false;
+    $('#webhook-color').disabled = false;
+    $('#webhook-color-text').disabled = false;
+
+    webhooks.forEach(w => {
+      const opt = document.createElement('option');
+      opt.value = w.id;
+      opt.textContent = w.name || 'Unnamed';
+      if (w.id === modalActiveWebhookId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+
+    if (!webhooks.find(w => w.id === modalActiveWebhookId)) {
+      modalActiveWebhookId = webhooks[0].id;
+      sel.value = modalActiveWebhookId;
+    }
+
+    const active = webhooks.find(w => w.id === modalActiveWebhookId);
+    if (active) {
+      $('#webhook-name').value = active.name || '';
+      $('#webhook-url').value = active.url || '';
+      $('#webhook-color').value = active.color || '#5865F2';
+      $('#webhook-color-text').value = active.color || '#5865F2';
+    }
+  }
+
   function openWebhookModal() {
-    $('#webhook-url').value = webhookUrl;
-    $('#webhook-color').value = webhookColor;
-    $('#webhook-color-text').value = webhookColor;
+    modalActiveWebhookId = activeWebhookId;
+    renderWebhookProfileOptions();
     $('#webhook-status').textContent = '';
     webhookModal.style.display = 'flex';
   }
@@ -1347,6 +1435,46 @@
     $('#webhook-close').addEventListener('click', closeWebhookModal);
     webhookModal.addEventListener('click', (e) => {
       if (e.target === webhookModal) closeWebhookModal();
+    });
+
+    // Sub-modal Profile events
+    $('#webhook-profile-select').addEventListener('change', (e) => {
+      const newId = parseInt(e.target.value);
+      if (!isNaN(newId)) {
+        saveCurrentModalProfile();
+        modalActiveWebhookId = newId;
+        renderWebhookProfileOptions();
+      }
+    });
+
+    function saveCurrentModalProfile() {
+      const active = webhooks.find(w => w.id === modalActiveWebhookId);
+      if (active) {
+        active.name = $('#webhook-name').value.trim();
+        active.url = $('#webhook-url').value.trim();
+        let colorText = $('#webhook-color-text').value.trim();
+        if (colorText.length === 6 && !colorText.startsWith('#')) colorText = '#' + colorText;
+        if (/^#[0-9a-f]{6}$/i.test(colorText)) {
+          active.color = colorText.toUpperCase();
+        } else {
+          active.color = $('#webhook-color').value.toUpperCase();
+        }
+      }
+    }
+
+    $('#btn-webhook-add').addEventListener('click', () => {
+      saveCurrentModalProfile();
+      const newId = Date.now();
+      webhooks.push({ id: newId, name: `Profile ${webhooks.length + 1}`, url: '', color: '#5865F2' });
+      modalActiveWebhookId = newId;
+      renderWebhookProfileOptions();
+    });
+
+    $('#btn-webhook-delete').addEventListener('click', () => {
+      if (!modalActiveWebhookId) return;
+      webhooks = webhooks.filter(w => w.id !== modalActiveWebhookId);
+      modalActiveWebhookId = webhooks.length > 0 ? webhooks[0].id : null;
+      renderWebhookProfileOptions();
     });
 
     const syncTextToColor = () => {
@@ -1377,15 +1505,15 @@
     });
 
     $('#btn-webhook-save').addEventListener('click', () => {
-      webhookUrl = $('#webhook-url').value.trim();
-      let colorText = $('#webhook-color-text').value.trim();
-      if (colorText.length === 6 && !colorText.startsWith('#')) colorText = '#' + colorText;
-      if (/^#[0-9a-f]{6}$/i.test(colorText)) {
-        webhookColor = colorText.toUpperCase();
+      if (modalActiveWebhookId) {
+        saveCurrentModalProfile();
+        activeWebhookId = modalActiveWebhookId;
       } else {
-        webhookColor = $('#webhook-color').value.toUpperCase();
+        activeWebhookId = null;
       }
+      updateGlobalWebhookFromActive();
       saveData();
+      
       $('#webhook-status').textContent = '✓ Saved!';
       $('#webhook-status').className = 'webhook-status success';
       setTimeout(closeWebhookModal, 800);
