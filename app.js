@@ -27,6 +27,8 @@
       savingThrows: 'Saving Throws',
       skills: 'Skills',
       passiveSenses: 'Passive Senses',
+      checkBtn: 'Check',
+      saveBtn: 'Save',
 
       notes: 'Notes',
       diceRoll: 'Dice Roll', dieType: 'Die Type', numDice: 'Number of Dice',
@@ -56,6 +58,8 @@
       savingThrows: 'Спасброски',
       skills: 'Навыки',
       passiveSenses: 'Пассивные чувства',
+      checkBtn: 'Проверка',
+      saveBtn: 'Спасбросок',
 
       notes: 'Заметки',
       diceRoll: 'Бросок кости', dieType: 'Тип кости', numDice: 'Количество костей',
@@ -128,9 +132,8 @@
   let currentLang = 'en';
 
   // Dice state
-  let diceType = 4;
-  let diceCount = 1;
-  let diceModifier = 0;
+  const MULTI_DICE_TYPES = [4, 6, 8, 10, 12, 20, 100];
+  let multiDiceCounts = { 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 20: 0, 100: 0 };
   let diceResults = [];
 
   // ── DOM ───────────────────────────────────────────
@@ -217,6 +220,7 @@
       pfpUrl: '',
       abilities: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
       skillProficiencies: [],
+      savingThrowProficiencies: [],
       profBonus: 2,
       text: { notes: '' },
     };
@@ -315,15 +319,39 @@
   function buildAbilityGrid(char) {
     const grid = $('#ability-grid');
     grid.innerHTML = '';
+    const t = TRANSLATIONS[currentLang];
     for (const ab of ABILITIES) {
       const score = char.abilities[ab];
       const mod = abilityMod(score);
+      const isProf = char.savingThrowProficiencies && char.savingThrowProficiencies.includes(ab);
+      const saveMod = mod + (isProf ? char.profBonus : 0);
+      
+      const abName = ABILITY_FULL_I18N[currentLang][ab].toUpperCase();
+
       const box = document.createElement('div');
       box.className = 'ability-box';
       box.innerHTML = `
-        <span class="ability-label">${ab}</span>
-        <input class="ability-score" type="number" data-ability="${ab}" value="${score}" min="1" max="30" />
-        <span class="ability-mod" data-ability-mod="${ab}">${modStr(mod)}</span>
+        <div class="ability-top">
+          <span class="ability-name">${abName}</span>
+          <input class="ability-score-input ability-score" type="number" data-ability="${ab}" value="${score}" min="1" max="30" />
+        </div>
+        <div class="ability-actions">
+          <button class="ability-action-btn" data-ability-roll="${ab}" data-roll-type="check">
+            <span class="ability-action-name">${t.checkBtn || 'CHECK'}</span>
+            <span class="ability-action-mod" data-ability-mod="${ab}">${modStr(mod)}</span>
+          </button>
+          
+          <div class="ability-action-group">
+            <label class="ability-prof-toggle">
+              <input type="checkbox" data-save-prof="${ab}" ${isProf ? 'checked' : ''} />
+              <span class="dot"></span>
+            </label>
+            <button class="ability-action-btn" data-ability-roll="${ab}" data-roll-type="save">
+              <span class="ability-action-name">${t.saveBtn || 'SAVE'}</span>
+              <span class="ability-action-mod" data-save-mod="${ab}">${modStr(saveMod)}</span>
+            </button>
+          </div>
+        </div>
       `;
       grid.appendChild(box);
     }
@@ -388,19 +416,21 @@
 
   // ── Skill Roll Modal State ────────────────────────
   let skillRollName = '';
+  let skillRollType = 'skill';
   let skillRollDefaultMod = 0;
   let skillRollSelectedMod = 0;
   let skillRollD20 = null;
   const skillRollModal = document.getElementById('skill-roll-modal');
 
-  function openSkillRollModal(skillName, skillMod) {
-    skillRollName = skillName;
+  function openSkillRollModal(nameKey, type, skillMod, customTitle = null) {
+    skillRollName = nameKey;
+    skillRollType = type;
     skillRollDefaultMod = skillMod;
     skillRollSelectedMod = skillMod;
     skillRollD20 = null;
 
     // Set skill name display
-    const displayName = SKILLS_I18N[currentLang][skillName];
+    const displayName = customTitle || SKILLS_I18N[currentLang][nameKey] || nameKey;
     $('#skill-roll-skill-name').textContent = displayName;
 
     // Build modifier selector buttons (-5 to +10)
@@ -488,7 +518,6 @@
     const d20 = skillRollD20;
     const mod = skillRollSelectedMod;
     const total = d20 + mod;
-    const skillGenitiveName = SKILLS_GENITIVE_I18N[currentLang][skillRollName];
     const t = TRANSLATIONS[currentLang];
 
     // Breakdown: (17) – 5  or  (17) + 3
@@ -501,7 +530,18 @@
     if (mod > 0) formulaStr += ` + ${mod}`;
     else if (mod < 0) formulaStr += ` – ${Math.abs(mod)}`;
 
-    let titleStr = currentLang === 'ru' ? `${t.checkOf} ${skillGenitiveName} — ${total}` : `${skillGenitiveName} ${t.checkOf} — ${total}`;
+    let titleStr = '';
+    if (skillRollType === 'skill') {
+      const genitiveName = SKILLS_GENITIVE_I18N[currentLang][skillRollName];
+      titleStr = currentLang === 'ru' ? `${t.checkOf} ${genitiveName} — ${total}` : `${genitiveName} ${t.checkOf} — ${total}`;
+    } else if (skillRollType === 'check') {
+      const abName = ABILITY_FULL_I18N[currentLang][skillRollName];
+      titleStr = currentLang === 'ru' ? `Проверка: ${abName} — ${total}` : `Ability Check: ${abName} — ${total}`;
+    } else if (skillRollType === 'save') {
+      const abName = ABILITY_FULL_I18N[currentLang][skillRollName];
+      titleStr = currentLang === 'ru' ? `Спасбросок: ${abName} — ${total}` : `Saving Throw: ${abName} — ${total}`;
+    }
+
     if (d20 === 20) titleStr = `🔥 ${titleStr} 🔥`;
     if (d20 === 1) titleStr = `🩸 ${titleStr} 🩸`;
 
@@ -549,7 +589,20 @@
 
   // ── Skill Roll (Throwable) ────────────────────────
   function rollSkillCheck(skillName, skillMod) {
-    openSkillRollModal(skillName, skillMod);
+    openSkillRollModal(skillName, 'skill', skillMod);
+  }
+
+  function rollAbility(ab, type, abMod, char) {
+    let mod = abMod;
+    if (type === 'save') {
+      const isProf = char.savingThrowProficiencies && char.savingThrowProficiencies.includes(ab);
+      if (isProf) mod += char.profBonus;
+    }
+    const t = TRANSLATIONS[currentLang];
+    const abName = ABILITY_FULL_I18N[currentLang][ab];
+    const prefix = type === 'save' ? t.saveBtn : t.checkBtn;
+    const title = `${prefix}: ${abName}`;
+    openSkillRollModal(ab, type, mod, title);
   }
 
   // ── Auto-save on change ───────────────────────────
@@ -587,30 +640,59 @@
       buildPassivesList(char);
     });
 
-    // Skill proficiencies (delegated)
+    // Skill & Save proficiencies (delegated)
     document.addEventListener('change', (e) => {
-      if (!e.target.matches('[data-skill]')) return;
-      const char = getActiveChar();
-      if (!char) return;
-      const sk = e.target.dataset.skill;
-      if (e.target.checked) {
-        if (!char.skillProficiencies.includes(sk)) char.skillProficiencies.push(sk);
-      } else {
-        char.skillProficiencies = char.skillProficiencies.filter(s => s !== sk);
+      if (e.target.matches('[data-skill]')) {
+        const char = getActiveChar();
+        if (!char) return;
+        const sk = e.target.dataset.skill;
+        if (e.target.checked) {
+          if (!char.skillProficiencies.includes(sk)) char.skillProficiencies.push(sk);
+        } else {
+          char.skillProficiencies = char.skillProficiencies.filter(s => s !== sk);
+        }
+        saveData();
+        buildSkillsList(char);
+        buildPassivesList(char);
+      } else if (e.target.matches('[data-save-prof]')) {
+        const char = getActiveChar();
+        if (!char) return;
+        if (!char.savingThrowProficiencies) char.savingThrowProficiencies = [];
+        const ab = e.target.dataset.saveProf;
+        if (e.target.checked) {
+          if (!char.savingThrowProficiencies.includes(ab)) char.savingThrowProficiencies.push(ab);
+        } else {
+          char.savingThrowProficiencies = char.savingThrowProficiencies.filter(a => a !== ab);
+        }
+        saveData();
+        buildAbilityGrid(char);
+        buildSkillsList(char);
+        buildPassivesList(char);
       }
-      saveData();
-      buildSkillsList(char);
-      buildPassivesList(char);
     });
 
-    // Skill roll buttons (delegated)
+    // Roll buttons (delegated)
     document.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-skill-roll]');
-      if (!btn) return;
-      e.preventDefault();
-      const skillName = btn.dataset.skillRoll;
-      const skillMod = parseInt(btn.dataset.skillMod);
-      rollSkillCheck(skillName, skillMod);
+      const skillBtn = e.target.closest('[data-skill-roll]');
+      if (skillBtn) {
+        e.preventDefault();
+        const skillName = skillBtn.dataset.skillRoll;
+        const skillMod = parseInt(skillBtn.dataset.skillMod);
+        rollSkillCheck(skillName, skillMod);
+        return;
+      }
+      
+      const abBtn = e.target.closest('[data-ability-roll]');
+      if (abBtn) {
+        e.preventDefault();
+        const ab = abBtn.dataset.abilityRoll;
+        const type = abBtn.dataset.rollType;
+        const char = getActiveChar();
+        if (!char) return;
+        const score = char.abilities[ab];
+        const mod = abilityMod(score);
+        rollAbility(ab, type, mod, char);
+      }
     });
 
     // Notes
@@ -684,13 +766,9 @@
 
   // ── Dice Modal ────────────────────────────────────
   function openDiceModal() {
-    diceType = 4;
-    diceCount = 1;
-    diceModifier = 0;
+    MULTI_DICE_TYPES.forEach(d => multiDiceCounts[d] = 0);
     diceResults = [];
-    updateDieTypeButtons();
-    $('#dice-count').textContent = '1';
-    $('#dice-modifier').value = '0';
+    buildMultiDiceConfig();
     updateDiceFormula();
     buildDiceResultsArea();
     $('#dice-total-row').style.display = 'none';
@@ -703,111 +781,122 @@
     diceModal.style.display = 'none';
   }
 
-  function updateDieTypeButtons() {
-    $$('#die-type-btns .die-btn').forEach(btn => {
-      btn.classList.toggle('active', parseInt(btn.dataset.die) === diceType);
+  function buildMultiDiceConfig() {
+    const container = $('#multi-dice-container');
+    if (!container) return;
+    container.innerHTML = '';
+    MULTI_DICE_TYPES.forEach(d => {
+      const row = document.createElement('div');
+      row.className = 'dice-row';
+      row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); margin:0;';
+      row.innerHTML = `
+        <span class="dice-label" style="margin:0; font-size:14px;">d${d}</span>
+        <div class="dice-count-row" style="gap:8px;">
+          <button class="dice-count-btn" style="width:30px; height:30px; font-size:1rem;" data-multi-minus="${d}">−</button>
+          <span class="dice-count-val" style="min-width:20px; font-size:1.1rem;" id="multi-count-${d}">${multiDiceCounts[d]}</span>
+          <button class="dice-count-btn" style="width:30px; height:30px; font-size:1rem;" data-multi-plus="${d}">+</button>
+        </div>
+      `;
+      container.appendChild(row);
     });
   }
 
   function updateDiceFormula() {
-    const mod = diceModifier;
-    let formula = `${diceCount}d${diceType}`;
-    if (mod > 0) formula += ` + ${mod}`;
-    else if (mod < 0) formula += ` – ${Math.abs(mod)}`;
-    $('#dice-formula').textContent = formula;
+    let parts = [];
+    MULTI_DICE_TYPES.forEach(d => {
+      if (multiDiceCounts[d] > 0) parts.push(`${multiDiceCounts[d]}d${d}`);
+    });
+    $('#dice-formula').textContent = parts.length > 0 ? parts.join(' + ') : '0';
   }
 
   function buildDiceResultsArea() {
     const area = $('#dice-results-area');
     area.innerHTML = '';
-    diceResults = new Array(diceCount).fill(null);
+    diceResults = [];
+    
+    MULTI_DICE_TYPES.forEach(d => {
+      for (let i = 0; i < multiDiceCounts[d]; i++) {
+        diceResults.push({ type: d, value: null });
+      }
+    });
 
-    for (let d = 0; d < diceCount; d++) {
+    const t = TRANSLATIONS[currentLang];
+    diceResults.forEach((die, index) => {
       const group = document.createElement('div');
       group.className = 'dice-die-group';
 
       const label = document.createElement('div');
       label.className = 'dice-die-label';
-      const t = TRANSLATIONS[currentLang];
-      label.textContent = diceCount > 1 ? `${t.dieNum}${d + 1} (d${diceType})` : `${t.selectResult} (d${diceType})`;
+      label.textContent = `${t.dieNum}${index + 1} (d${die.type})`;
       group.appendChild(label);
 
       const grid = document.createElement('div');
       grid.className = 'dice-number-grid';
 
-      for (let n = 1; n <= diceType; n++) {
+      for (let n = 1; n <= die.type; n++) {
         const btn = document.createElement('button');
         btn.className = 'dice-num-btn';
         btn.textContent = n;
-        btn.dataset.dieIndex = d;
+        btn.dataset.dieIndex = index;
         btn.dataset.value = n;
-        btn.addEventListener('click', () => selectDiceResult(d, n));
+        btn.addEventListener('click', () => selectDiceResult(index, n));
         grid.appendChild(btn);
       }
 
       group.appendChild(grid);
       area.appendChild(group);
-    }
+    });
   }
 
   function selectDiceResult(dieIndex, value) {
-    diceResults[dieIndex] = value;
+    diceResults[dieIndex].value = value;
     const btns = $$(`[data-die-index="${dieIndex}"]`);
     btns.forEach(btn => {
       btn.classList.toggle('selected', parseInt(btn.dataset.value) === value);
     });
-    const allSelected = diceResults.every(v => v !== null);
+    const allSelected = diceResults.length > 0 && diceResults.every(d => d.value !== null);
     if (allSelected) {
-      const sum = diceResults.reduce((a, b) => a + b, 0);
-      const total = sum + diceModifier;
+      const total = diceResults.reduce((sum, d) => sum + d.value, 0);
       $('#dice-total-value').textContent = total;
       $('#dice-total-row').style.display = 'flex';
       $('#btn-send-dice').disabled = false;
+    } else {
+      $('#dice-total-row').style.display = 'none';
+      $('#btn-send-dice').disabled = true;
     }
   }
 
   function setupDiceListeners() {
-    $('#die-type-btns').addEventListener('click', (e) => {
-      const btn = e.target.closest('.die-btn');
-      if (!btn) return;
-      diceType = parseInt(btn.dataset.die);
-      updateDieTypeButtons();
-      updateDiceFormula();
-      buildDiceResultsArea();
-      $('#dice-total-row').style.display = 'none';
-      $('#btn-send-dice').disabled = true;
-    });
-
-    $('#dice-minus').addEventListener('click', () => {
-      if (diceCount > 1) {
-        diceCount--;
-        $('#dice-count').textContent = diceCount;
-        updateDiceFormula();
-        buildDiceResultsArea();
-        $('#dice-total-row').style.display = 'none';
-        $('#btn-send-dice').disabled = true;
-      }
-    });
-
-    $('#dice-plus').addEventListener('click', () => {
-      if (diceCount < 20) {
-        diceCount++;
-        $('#dice-count').textContent = diceCount;
-        updateDiceFormula();
-        buildDiceResultsArea();
-        $('#dice-total-row').style.display = 'none';
-        $('#btn-send-dice').disabled = true;
-      }
-    });
-
-    $('#dice-modifier').addEventListener('input', () => {
-      diceModifier = parseInt($('#dice-modifier').value) || 0;
-      updateDiceFormula();
-      if (diceResults.every(v => v !== null) && diceResults.length > 0) {
-        const sum = diceResults.reduce((a, b) => a + b, 0);
-        $('#dice-total-value').textContent = sum + diceModifier;
-      }
-    });
+    const mc = $('#multi-dice-container');
+    if (mc) {
+      mc.addEventListener('click', (e) => {
+        const minusBtn = e.target.closest('[data-multi-minus]');
+        if (minusBtn) {
+          const d = parseInt(minusBtn.dataset.multiMinus);
+          if (multiDiceCounts[d] > 0) {
+            multiDiceCounts[d]--;
+            $(`#multi-count-${d}`).textContent = multiDiceCounts[d];
+            updateDiceFormula();
+            buildDiceResultsArea();
+            $('#dice-total-row').style.display = 'none';
+            $('#btn-send-dice').disabled = true;
+          }
+        }
+        
+        const plusBtn = e.target.closest('[data-multi-plus]');
+        if (plusBtn) {
+          const d = parseInt(plusBtn.dataset.multiPlus);
+          if (multiDiceCounts[d] < 40) { // arbitrary cap
+            multiDiceCounts[d]++;
+            $(`#multi-count-${d}`).textContent = multiDiceCounts[d];
+            updateDiceFormula();
+            buildDiceResultsArea();
+            $('#dice-total-row').style.display = 'none';
+            $('#btn-send-dice').disabled = true;
+          }
+        }
+      });
+    }
 
     btnDiceOpen.addEventListener('click', openDiceModal);
     $('#dice-close').addEventListener('click', closeDiceModal);
@@ -831,23 +920,34 @@
     const char = getActiveChar();
     if (!char) return;
 
-    const sum = diceResults.reduce((a, b) => a + b, 0);
-    const total = sum + diceModifier;
+    if (diceResults.length === 0 || !diceResults.every(d => d.value !== null)) return;
 
-    const diceStr = diceResults.join(' + ');
-    let breakdownStr = `(${diceStr})`;
-    if (diceModifier > 0) breakdownStr += ` + ${diceModifier}`;
-    else if (diceModifier < 0) breakdownStr += ` – ${Math.abs(diceModifier)}`;
-
+    const total = diceResults.reduce((sum, d) => sum + d.value, 0);
     const dNotation = currentLang === 'ru' ? 'к' : 'd';
-    let formulaStr = `(${diceCount}${dNotation}${diceType})`;
-    if (diceModifier > 0) formulaStr += ` + ${diceModifier}`;
-    else if (diceModifier < 0) formulaStr += ` – ${Math.abs(diceModifier)}`;
+    
+    let breakdownParts = [];
+    let formulaParts = [];
+    MULTI_DICE_TYPES.forEach(d => {
+      if (multiDiceCounts[d] > 0) {
+        formulaParts.push(`${multiDiceCounts[d]}${dNotation}${d}`);
+        const vals = diceResults.filter(res => res.type === d).map(res => res.value);
+        breakdownParts.push(`**${multiDiceCounts[d]}${dNotation}${d}**: ${vals.join(', ')}`);
+      }
+    });
 
-    let titleStr = `Бросок — ${total}`;
-    if (diceType === 20) {
-      if (diceResults.includes(20)) titleStr = `🔥 ${titleStr} 🔥`;
-      else if (diceResults.includes(1)) titleStr = `🩸 ${titleStr} 🩸`;
+    const breakdownStr = breakdownParts.join('\n');
+    const formulaStr = formulaParts.join(' + ');
+    const t = TRANSLATIONS[currentLang];
+    
+    let titleStr = currentLang === 'ru' ? `Бросок — ${total}` : `Roll — ${total}`;
+    
+    const has20 = diceResults.some(d => d.type === 20 && d.value === 20);
+    const has1 = diceResults.some(d => d.type === 20 && d.value === 1);
+    
+    if (has20) {
+      titleStr = `🔥 ${titleStr} 🔥`;
+    } else if (has1) {
+      titleStr = `🩸 ${titleStr} 🩸`;
     }
 
     const colorInt = parseInt(webhookColor.replace(/^#/, ''), 16);

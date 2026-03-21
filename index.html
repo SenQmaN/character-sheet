@@ -15,7 +15,7 @@
   <!-- ═══ CHARACTER LIST VIEW ═══ -->
   <div id="view-list" class="view active">
     <header class="list-header">
-      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.6</span></h1>
+      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.7</span></h1>
       <p class="app-subtitle" data-i18n="subtitle">Manage your heroes</p>
     </header>
 
@@ -124,38 +124,12 @@
       </div>
 
       <div class="dice-config">
-        <!-- Die type -->
-        <div class="dice-row">
-          <label class="dice-label" data-i18n="dieType">Die Type</label>
-          <div class="die-type-btns" id="die-type-btns">
-            <button class="die-btn active" data-die="4">d4</button>
-            <button class="die-btn" data-die="6">d6</button>
-            <button class="die-btn" data-die="8">d8</button>
-            <button class="die-btn" data-die="10">d10</button>
-            <button class="die-btn" data-die="12">d12</button>
-            <button class="die-btn" data-die="20">d20</button>
-            <button class="die-btn" data-die="100">d100</button>
-          </div>
-        </div>
-
-        <!-- Number of dice -->
-        <div class="dice-row">
-          <label class="dice-label" data-i18n="numDice">Number of Dice</label>
-          <div class="dice-count-row">
-            <button class="dice-count-btn" id="dice-minus">−</button>
-            <span class="dice-count-val" id="dice-count">1</span>
-            <button class="dice-count-btn" id="dice-plus">+</button>
-          </div>
-        </div>
-
-        <!-- Modifier -->
-        <div class="dice-row">
-          <label class="dice-label" data-i18n="modifier">Modifier</label>
-          <input class="dice-modifier-input" id="dice-modifier" type="number" value="0" />
+        <div id="multi-dice-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <!-- Injected by JS -->
         </div>
 
         <!-- Formula preview -->
-        <div class="dice-formula" id="dice-formula">1d4</div>
+        <div class="dice-formula" id="dice-formula" style="margin-top: 15px;">0</div>
       </div>
 
       <!-- Result selection grids -->

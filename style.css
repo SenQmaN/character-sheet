@@ -160,22 +160,50 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 }
 
 /* ── Ability Scores ───────────────────────────────── */
-.ability-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
-.ability-box { text-align: center; }
-.ability-label {
-  font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-  color: var(--text-sec); margin-bottom: 6px; display: block;
+.ability-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ability-box {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px; display: flex; flex-direction: column; gap: 10px;
 }
-.ability-score {
-  width: 100%; padding: 8px; text-align: center; font-size: 1.3rem; font-weight: 800;
-  background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  color: var(--text); outline: none; font-family: var(--font-body); transition: border-color var(--transition);
+.ability-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-bottom: 1px solid var(--border); padding-bottom: 4px; position: relative;
 }
-.ability-score:focus { border-color: var(--border-focus); }
-.ability-mod {
-  display: block; font-size: 0.85rem; font-weight: 700; color: var(--gold-light);
-  margin-top: 4px;
+.ability-top::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; width: 30px; height: 1px; background: var(--gold-light);
 }
+.ability-name {
+  font-family: var(--font-heading); font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: 1px;
+}
+.ability-score-input {
+  width: 50px; background: transparent; border: none; color: var(--text); font-size: 1.4rem; font-weight: 800;
+  text-align: right; outline: none; font-family: var(--font-body);
+}
+
+.ability-actions { display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+.ability-action-group { display: flex; align-items: center; gap: 6px; }
+
+.ability-action-btn {
+  display: flex; align-items: center; background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius-xs); cursor: pointer; transition: all var(--transition);
+  padding: 0; overflow: hidden; height: 26px;
+}
+.ability-action-btn:hover { border-color: var(--border-focus); }
+.ability-action-name {
+  font-size: 0.6rem; font-weight: 700; color: var(--text-sec); padding: 0 6px; text-transform: uppercase;
+}
+.ability-action-mod {
+  font-size: 0.8rem; font-weight: 800; color: var(--text); background: var(--bg-input);
+  padding: 0 6px; height: 100%; display: flex; align-items: center; border-left: 1px solid var(--border);
+}
+
+.ability-prof-toggle { position: relative; cursor: pointer; display: flex; align-items: center; }
+.ability-prof-toggle input { position: absolute; opacity: 0; }
+.ability-prof-toggle .dot {
+  display: block; width: 14px; height: 14px; border: 2px solid var(--border); border-radius: 50%;
+  transition: all var(--transition);
+}
+.ability-prof-toggle input:checked ~ .dot { background: var(--gold); border-color: var(--gold); }
 
 /* ── Combat ───────────────────────────────────────── */
 .combat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
