@@ -15,7 +15,7 @@
   <!-- ═══ CHARACTER LIST VIEW ═══ -->
   <div id="view-list" class="view active">
     <header class="list-header">
-      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.11</span></h1>
+      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.12</span></h1>
       <p class="app-subtitle" data-i18n="subtitle">Manage your heroes</p>
     </header>
 
@@ -235,6 +235,27 @@
       <div class="delete-actions">
         <button class="btn btn-ghost" id="btn-delete-cancel" data-i18n="cancel">Cancel</button>
         <button class="btn btn-danger" id="btn-delete-confirm" data-i18n="delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ATTACK MODAL ═══ -->
+  <div class="modal-overlay" id="attack-modal" style="display:none;">
+    <div class="modal dice-modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 id="attack-modal-title">⚔️ Attack</h2>
+        <button class="modal-close" id="attack-close">✕</button>
+      </div>
+      
+      <div class="attack-segments-area" id="attack-segments-area" style="max-height: 60vh; overflow-y: auto;">
+        <!-- Injected by JS -->
+      </div>
+      
+      <div class="dice-status" id="attack-status" style="margin-top:10px;"></div>
+
+      <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 15px;">
+        <button class="btn btn-primary" id="btn-send-attack-sep" style="flex:1; background:var(--bg-alt); color:var(--text);" disabled>Send Separately</button>
+        <button class="btn btn-primary" id="btn-send-attack-comb" style="flex:1;" disabled>Send Combined</button>
       </div>
     </div>
   </div>

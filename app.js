@@ -432,6 +432,7 @@
         <input type="text" class="attack-name-input" data-attack-id="${i}" value="${atk.name || ''}" placeholder="Attack Name" />
         <span style="color:var(--text-sec); font-weight:bold;">:</span>
         <input type="text" class="attack-formula-input" data-attack-id="${i}" value="${atk.formula || ''}" placeholder="e.g. 1d8+[STR]" />
+        <button class="btn btn-ghost btn-attack-roll" data-attack-roll="${i}" title="Roll" style="padding:4px;">🎲</button>
         <button class="btn-delete-attack" data-attack-id="${i}" title="Remove">✕</button>
       `;
       list.appendChild(row);
@@ -629,6 +630,236 @@
     openSkillRollModal(ab, type, mod, title);
   }
 
+  // ── Attack Roll Modal State & Logic ────────────────
+  let currentAttackSegments = [];
+  let currentAttackName = '';
+
+  function parseFormulaSegments(formula, char) {
+    if (!formula) return [];
+    const rawSegments = formula.split(/\s+\+\s+/);
+    
+    return rawSegments.map(seg => {
+      let s = seg;
+      const stats = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA', 'СИЛ', 'ЛОВ', 'ТЕЛ', 'ИНТ', 'МУД', 'ХАР'];
+      stats.forEach(st => {
+        const re = new RegExp(`\\[${st}\\]`, 'gi');
+        if (re.test(s)) {
+          const map = { 'СИЛ': 'STR', 'ЛОВ': 'DEX', 'ТЕЛ': 'CON', 'ИНТ': 'INT', 'МУД': 'WIS', 'ХАР': 'CHA' };
+          const key = map[st.toUpperCase()] || st.toUpperCase();
+          const mod = abilityMod(char.abilities[key]);
+          const signedMod = mod >= 0 ? `+${mod}` : `${mod}`;
+          s = s.replace(re, signedMod);
+        }
+      });
+
+      s = s.replace(/\+\+/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-').replace(/--/g, '+');
+      
+      let totalStaticMod = 0;
+      let diceList = [];
+      let remaining = s;
+      const diceRe = /(\d+)[dкDК](\d+)/g;
+      let match;
+      while ((match = diceRe.exec(s)) !== null) {
+        let count = parseInt(match[1]);
+        if (count > 20) count = 20; 
+        diceList.push({ count, sides: parseInt(match[2]), results: Array(count).fill(null) });
+        remaining = remaining.replace(match[0], '');
+      }
+      
+      try {
+        const staticNums = remaining.replace(/\s+/g, '').match(/[+-]?\d+/g) || [];
+        totalStaticMod = staticNums.reduce((sum, val) => sum + parseInt(val), 0);
+      } catch(e) {}
+
+      return {
+        originalLabel: seg,
+        cleanLabel: s,
+        diceList,
+        staticMod: totalStaticMod
+      };
+    });
+  }
+
+  function openAttackModal(name, formula) {
+    const char = getActiveChar();
+    if (!char) return;
+    currentAttackName = name || 'Attack';
+    $('#attack-modal-title').textContent = `⚔️ ${currentAttackName}`;
+    currentAttackSegments = parseFormulaSegments(formula, char);
+    renderAttackModalSegments();
+    
+    $('#attack-status').textContent = '';
+    $('#attack-status').className = 'dice-status';
+    $('#attack-modal').style.display = 'flex';
+  }
+
+  function closeAttackModal() {
+    $('#attack-modal').style.display = 'none';
+  }
+
+  function renderAttackModalSegments() {
+    const area = $('#attack-segments-area');
+    area.innerHTML = '';
+    
+    if (currentAttackSegments.length === 0) {
+       area.innerHTML = '<p style="color:var(--text-dim);text-align:center;">No parsed formula.</p>';
+       $('#btn-send-attack-sep').disabled = true;
+       $('#btn-send-attack-comb').disabled = true;
+       return;
+    }
+
+    currentAttackSegments.forEach((seg, sIdx) => {
+      const segBlock = document.createElement('div');
+      segBlock.style.marginBottom = '20px';
+      segBlock.style.padding = '10px';
+      segBlock.style.background = 'var(--bg-alt)';
+      segBlock.style.borderRadius = 'var(--radius-xs)';
+      segBlock.innerHTML = `<h3 style="color:var(--gold-light);font-size:14px;margin-bottom:8px;">${seg.cleanLabel}</h3>`;
+      
+      let allReady = true;
+      let segSum = seg.staticMod;
+
+      seg.diceList.forEach((dGroup, gIdx) => {
+        const groupDiv = document.createElement('div');
+        groupDiv.style.marginBottom = '10px';
+        
+        for (let i = 0; i < dGroup.count; i++) {
+          const val = dGroup.results[i];
+          if (val === null) allReady = false;
+          else segSum += val;
+
+          const rowDiv = document.createElement('div');
+          rowDiv.style.marginBottom = '6px';
+          rowDiv.innerHTML = `<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">d${dGroup.sides} #${i+1}</div>`;
+          
+          const grid = document.createElement('div');
+          grid.className = 'dice-result-grid';
+          
+          for (let n = 1; n <= dGroup.sides; n++) {
+            const btn = document.createElement('button');
+            btn.className = 'dice-result-btn' + (val === n ? ' selected' : '');
+            btn.textContent = n;
+            btn.addEventListener('click', () => {
+              dGroup.results[i] = n;
+              renderAttackModalSegments();
+            });
+            grid.appendChild(btn);
+          }
+          rowDiv.appendChild(grid);
+          groupDiv.appendChild(rowDiv);
+        }
+        segBlock.appendChild(groupDiv);
+      });
+      
+      const sumDiv = document.createElement('div');
+      sumDiv.style.fontWeight = 'bold';
+      sumDiv.style.fontSize = '14px';
+      sumDiv.style.marginTop = '8px';
+      sumDiv.style.color = allReady ? 'var(--green)' : 'var(--text-dim)';
+      sumDiv.textContent = `Total: ${allReady ? segSum : '?'}`;
+      segBlock.appendChild(sumDiv);
+      
+      area.appendChild(segBlock);
+    });
+
+    const ready = currentAttackSegments.length > 0 && currentAttackSegments.every(seg => 
+      seg.diceList.every(g => g.results.every(r => r !== null))
+    );
+    $('#btn-send-attack-sep').disabled = !ready;
+    $('#btn-send-attack-comb').disabled = !ready;
+  }
+
+  async function sendAttackToWebhook(combined) {
+    const char = getActiveChar();
+    if (!webhookUrl || !char) return;
+    
+    $('#attack-status').textContent = 'Sending...';
+    $('#attack-status').className = 'dice-status';
+    $('#btn-send-attack-sep').disabled = true;
+    $('#btn-send-attack-comb').disabled = true;
+
+    try {
+      if (combined) {
+        let totalVal = 0;
+        let breakdownParts = [];
+        let formulaParts = [];
+        currentAttackSegments.forEach(seg => {
+          let segSum = seg.staticMod;
+          let segBreakdown = [];
+          seg.diceList.forEach(g => {
+            segSum += g.results.reduce((a, b) => a + b, 0);
+            segBreakdown.push(`(${g.results.join(' + ')})`);
+          });
+          totalVal += segSum;
+          let segFinalBrk = segBreakdown.length > 0 ? segBreakdown.join(' + ') : '';
+          
+          if (seg.staticMod > 0) segFinalBrk = segFinalBrk ? `${segFinalBrk} + ${seg.staticMod}` : `${seg.staticMod}`;
+          else if (seg.staticMod < 0) segFinalBrk = segFinalBrk ? `${segFinalBrk} – ${Math.abs(seg.staticMod)}` : `-${Math.abs(seg.staticMod)}`;
+          
+          if (segFinalBrk) breakdownParts.push(`[${segFinalBrk}]`);
+          formulaParts.push(`(${seg.cleanLabel})`);
+        });
+
+        const colorInt = parseInt(webhookColor.replace(/^#/, ''), 16);
+        const embed = {
+          author: { name: char.name },
+          title: `${currentAttackName} — ${totalVal}`,
+          description: breakdownParts.join(' + '),
+          footer: { text: formulaParts.join(' + ') },
+          color: isNaN(colorInt) ? 0x5865F2 : colorInt,
+        };
+        if (char.pfpUrl && char.pfpUrl.startsWith('http')) embed.thumbnail = { url: char.pfpUrl };
+
+        const resp = await fetch(webhookUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [embed] })
+        });
+        if (!resp.ok && resp.status !== 204) throw new Error('Error sending to Discord');
+      } else {
+        for (const seg of currentAttackSegments) {
+          let segSum = seg.staticMod;
+          let allDiceVals = [];
+          seg.diceList.forEach(g => {
+            allDiceVals.push(...g.results);
+            segSum += g.results.reduce((a, b) => a + b, 0);
+          });
+          
+          let breakdownStr = allDiceVals.length > 1 ? `(${allDiceVals.join(' + ')})` : (allDiceVals.length === 1 ? allDiceVals[0] : '');
+          if (seg.staticMod > 0) breakdownStr = breakdownStr ? `${breakdownStr} + ${seg.staticMod}` : `${seg.staticMod}`;
+          else if (seg.staticMod < 0) breakdownStr = breakdownStr ? `${breakdownStr} – ${Math.abs(seg.staticMod)}` : `-${Math.abs(seg.staticMod)}`;
+          
+          let titlePrefix = currentAttackSegments.length > 1 ? `${currentAttackName} (${seg.originalLabel})` : currentAttackName;
+
+          const colorInt = parseInt(webhookColor.replace(/^#/, ''), 16);
+          const embed = {
+            author: { name: char.name },
+            title: `${titlePrefix} — ${segSum}`,
+            description: breakdownStr,
+            footer: { text: seg.cleanLabel },
+            color: isNaN(colorInt) ? 0x5865F2 : colorInt,
+          };
+          if (char.pfpUrl && char.pfpUrl.startsWith('http')) embed.thumbnail = { url: char.pfpUrl };
+
+          const resp = await fetch(webhookUrl, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ embeds: [embed] })
+          });
+          if (!resp.ok && resp.status !== 204) throw new Error('Error sending to Discord');
+          await new Promise(r => setTimeout(r, 400)); 
+        }
+      }
+      
+      $('#attack-status').textContent = '✓ Sent to Discord!';
+      $('#attack-status').className = 'dice-status success';
+      setTimeout(closeAttackModal, 1500);
+    } catch (err) {
+      $('#attack-status').textContent = `✕ ${err.message}`;
+      $('#attack-status').className = 'dice-status error';
+      $('#btn-send-attack-sep').disabled = false;
+      $('#btn-send-attack-comb').disabled = false;
+    }
+  }
+
   // ── Auto-save on change ───────────────────────────
   function setupSheetListeners() {
     // Profile fields
@@ -739,7 +970,13 @@
     });
 
     $('#attacks-list').addEventListener('click', (e) => {
-      if (e.target.matches('.btn-delete-attack')) {
+      if (e.target.closest('.btn-attack-roll')) {
+        const id = parseInt(e.target.closest('.btn-attack-roll').dataset.attackRoll);
+        const char = getActiveChar();
+        if (char && char.attacks && char.attacks[id]) {
+          openAttackModal(char.attacks[id].name, char.attacks[id].formula);
+        }
+      } else if (e.target.matches('.btn-delete-attack')) {
         const char = getActiveChar();
         const id = parseInt(e.target.dataset.attackId);
         if (char && char.attacks) {
@@ -749,6 +986,11 @@
         }
       }
     });
+
+    // Attack Modal listeners
+    $('#attack-close').addEventListener('click', closeAttackModal);
+    $('#btn-send-attack-sep').addEventListener('click', () => sendAttackToWebhook(false));
+    $('#btn-send-attack-comb').addEventListener('click', () => sendAttackToWebhook(true));
 
     // Roll buttons (delegated)
     document.addEventListener('click', (e) => {
