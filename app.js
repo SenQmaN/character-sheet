@@ -711,13 +711,27 @@
     currentAttackSegments.forEach((seg, sIdx) => {
       const segBlock = document.createElement('div');
       segBlock.style.marginBottom = '20px';
-      segBlock.style.padding = '10px';
+      segBlock.style.padding = '12px 16px';
       segBlock.style.background = 'var(--bg-alt)';
-      segBlock.style.borderRadius = 'var(--radius-xs)';
-      segBlock.innerHTML = `<h3 style="color:var(--gold-light);font-size:14px;margin-bottom:8px;">${seg.cleanLabel}</h3>`;
+      segBlock.style.border = '1px solid var(--border)';
+      segBlock.style.borderRadius = 'var(--radius-sm)';
       
       let allReady = true;
       let segSum = seg.staticMod;
+      const headerDiv = document.createElement('div');
+      headerDiv.style.display = 'flex';
+      headerDiv.style.justifyContent = 'space-between';
+      headerDiv.style.alignItems = 'center';
+      headerDiv.style.marginBottom = '12px';
+      headerDiv.style.borderBottom = '1px solid var(--border)';
+      headerDiv.style.paddingBottom = '6px';
+      headerDiv.innerHTML = `<h3 style="color:var(--text); font-size:15px; font-weight:600;">${seg.cleanLabel}</h3>`;
+      const sumIndicator = document.createElement('div');
+      sumIndicator.style.fontWeight = '700';
+      sumIndicator.style.fontSize = '16px';
+      sumIndicator.style.color = 'var(--text-dim)';
+      headerDiv.appendChild(sumIndicator);
+      segBlock.appendChild(headerDiv);
 
       seg.diceList.forEach((dGroup, gIdx) => {
         const groupDiv = document.createElement('div');
@@ -751,13 +765,8 @@
         segBlock.appendChild(groupDiv);
       });
       
-      const sumDiv = document.createElement('div');
-      sumDiv.style.fontWeight = 'bold';
-      sumDiv.style.fontSize = '14px';
-      sumDiv.style.marginTop = '8px';
-      sumDiv.style.color = allReady ? 'var(--green)' : 'var(--text-dim)';
-      sumDiv.textContent = `Total: ${allReady ? segSum : '?'}`;
-      segBlock.appendChild(sumDiv);
+      sumIndicator.style.color = allReady ? 'var(--gold-light)' : 'var(--text-dim)';
+      sumIndicator.textContent = `Total: ${allReady ? segSum : '?'}`;
       
       area.appendChild(segBlock);
     });
@@ -788,22 +797,31 @@
           let segBreakdown = [];
           seg.diceList.forEach(g => {
             segSum += g.results.reduce((a, b) => a + b, 0);
-            segBreakdown.push(`(${g.results.join(' + ')})`);
+            segBreakdown.push(`${g.results.join(' + ')}`);
           });
           totalVal += segSum;
-          let segFinalBrk = segBreakdown.length > 0 ? segBreakdown.join(' + ') : '';
+          let segFinalBrk = segBreakdown.length > 0 ? `(${segBreakdown.join(') + (')})` : '';
           
           if (seg.staticMod > 0) segFinalBrk = segFinalBrk ? `${segFinalBrk} + ${seg.staticMod}` : `${seg.staticMod}`;
-          else if (seg.staticMod < 0) segFinalBrk = segFinalBrk ? `${segFinalBrk} – ${Math.abs(seg.staticMod)}` : `-${Math.abs(seg.staticMod)}`;
+          else if (seg.staticMod < 0) segFinalBrk = segFinalBrk ? `${segFinalBrk} - ${Math.abs(seg.staticMod)}` : `-${Math.abs(seg.staticMod)}`;
           
-          if (segFinalBrk) breakdownParts.push(`[${segFinalBrk}]`);
-          formulaParts.push(`(${seg.cleanLabel})`);
+          if (segFinalBrk) breakdownParts.push(segFinalBrk);
+          
+          let f = '';
+          seg.diceList.forEach(g => {
+            const dNot = currentLang === 'ru' ? 'к' : 'd';
+            f += (f ? ' + ' : '') + `(${g.count}${dNot}${g.sides})`;
+          });
+          if (seg.staticMod > 0) f = f ? `${f} + ${seg.staticMod}` : `${seg.staticMod}`;
+          else if (seg.staticMod < 0) f = f ? `${f} - ${Math.abs(seg.staticMod)}` : `-${Math.abs(seg.staticMod)}`;
+          if (f) formulaParts.push(f);
         });
 
         const colorInt = parseInt(webhookColor.replace(/^#/, ''), 16);
+        const titleStr = currentLang === 'ru' ? `Бросок — ${totalVal}` : `Roll — ${totalVal}`;
         const embed = {
           author: { name: char.name },
-          title: `${currentAttackName} — ${totalVal}`,
+          title: titleStr,
           description: breakdownParts.join(' + '),
           footer: { text: formulaParts.join(' + ') },
           color: isNaN(colorInt) ? 0x5865F2 : colorInt,
@@ -819,23 +837,30 @@
         for (const seg of currentAttackSegments) {
           let segSum = seg.staticMod;
           let allDiceVals = [];
+          
+          let f = '';
           seg.diceList.forEach(g => {
             allDiceVals.push(...g.results);
             segSum += g.results.reduce((a, b) => a + b, 0);
+            const dNot = currentLang === 'ru' ? 'к' : 'd';
+            f += (f ? ' + ' : '') + `(${g.count}${dNot}${g.sides})`;
           });
           
-          let breakdownStr = allDiceVals.length > 1 ? `(${allDiceVals.join(' + ')})` : (allDiceVals.length === 1 ? allDiceVals[0] : '');
+          let breakdownStr = allDiceVals.length > 0 ? `(${allDiceVals.join(' + ')})` : '';
           if (seg.staticMod > 0) breakdownStr = breakdownStr ? `${breakdownStr} + ${seg.staticMod}` : `${seg.staticMod}`;
-          else if (seg.staticMod < 0) breakdownStr = breakdownStr ? `${breakdownStr} – ${Math.abs(seg.staticMod)}` : `-${Math.abs(seg.staticMod)}`;
+          else if (seg.staticMod < 0) breakdownStr = breakdownStr ? `${breakdownStr} - ${Math.abs(seg.staticMod)}` : `-${Math.abs(seg.staticMod)}`;
           
-          let titlePrefix = currentAttackSegments.length > 1 ? `${currentAttackName} (${seg.originalLabel})` : currentAttackName;
+          if (seg.staticMod > 0) f = f ? `${f} + ${seg.staticMod}` : `${seg.staticMod}`;
+          else if (seg.staticMod < 0) f = f ? `${f} - ${Math.abs(seg.staticMod)}` : `-${Math.abs(seg.staticMod)}`;
+
+          const titlePrefix = currentLang === 'ru' ? `Бросок` : `Roll`;
 
           const colorInt = parseInt(webhookColor.replace(/^#/, ''), 16);
           const embed = {
             author: { name: char.name },
             title: `${titlePrefix} — ${segSum}`,
             description: breakdownStr,
-            footer: { text: seg.cleanLabel },
+            footer: { text: f },
             color: isNaN(colorInt) ? 0x5865F2 : colorInt,
           };
           if (char.pfpUrl && char.pfpUrl.startsWith('http')) embed.thumbnail = { url: char.pfpUrl };
