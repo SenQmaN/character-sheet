@@ -502,7 +502,8 @@
     const embed = {
       author: { name: char.name },
       title: titleStr,
-      description: `${breakdownStr}\n\n-# ${formulaStr}`,
+      description: breakdownStr,
+      footer: { text: formulaStr },
       color: 0x5865F2,
     };
 
@@ -845,7 +846,8 @@
     const embed = {
       author: { name: char.name },
       title: titleStr,
-      description: `${breakdownStr}\n\n-# ${formulaStr}`,
+      description: breakdownStr,
+      footer: { text: formulaStr },
       color: 0x5865F2,
     };
 
