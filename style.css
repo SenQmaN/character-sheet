@@ -257,6 +257,18 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 }
 .save-name, .skill-name { font-size: 0.78rem; color: var(--text-sec); flex: 1; }
 .save-val { font-size: 0.82rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; min-width: 28px; text-align: right; }
+.skill-bonus-input {
+  width: 38px; padding: 4px; background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-xs); color: var(--text); font-size: 0.8rem;
+  text-align: center; font-variant-numeric: tabular-nums; transition: border-color var(--transition);
+  outline: none; -moz-appearance: textfield; margin: 0 4px;
+}
+.skill-bonus-input:focus { border-color: var(--border-focus); background: var(--bg-hover); }
+.skill-bonus-input::-webkit-outer-spin-button,
+.skill-bonus-input::-webkit-inner-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+
 .skill-roll-btn {
   padding: 4px 12px; min-width: 42px; border: 1px solid rgba(88,101,242,0.3);
   border-radius: var(--radius-xs); background: var(--blue-dim); color: #8b9cf7;

@@ -95,6 +95,11 @@
 
   const ABILITIES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
 
+  const ABILITY_GENITIVE_I18N = {
+    en: { STR: 'Strength', DEX: 'Dexterity', CON: 'Constitution', INT: 'Intelligence', WIS: 'Wisdom', CHA: 'Charisma' },
+    ru: { STR: 'Силы', DEX: 'Ловкости', CON: 'Телосложения', INT: 'Интеллекта', WIS: 'Мудрости', CHA: 'Харизмы' }
+  };
+
   const SKILLS = [
     { name: 'Acrobatics', ability: 'DEX' },
     { name: 'Animal Handling', ability: 'WIS' },
@@ -221,6 +226,7 @@
       abilities: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
       skillProficiencies: [],
       savingThrowProficiencies: [],
+      skillBonuses: {},
       profBonus: 2,
       text: { notes: '' },
     };
@@ -385,7 +391,8 @@
       
       for (const sk of skillsInAb) {
         const prof = char.skillProficiencies.includes(sk.name);
-        const mod = abilityMod(char.abilities[sk.ability]) + (prof ? char.profBonus : 0);
+        const customBonus = char.skillBonuses && char.skillBonuses[sk.name] ? char.skillBonuses[sk.name] : 0;
+        const mod = abilityMod(char.abilities[sk.ability]) + (prof ? char.profBonus : 0) + customBonus;
         const row = document.createElement('div');
         row.className = 'skill-row';
         row.innerHTML = `
@@ -394,6 +401,7 @@
             <span class="dot"></span>
           </label>
           <span class="skill-name">${SKILLS_I18N[currentLang][sk.name]}</span>
+          <input type="number" class="skill-bonus-input" data-skill-bonus="${sk.name}" value="${customBonus}" title="Custom bonus" />
           <button class="skill-roll-btn" data-skill-roll="${sk.name}" data-skill-mod="${mod}" title="Roll d20 ${modStr(mod)}">
             ${modStr(mod)}
           </button>
@@ -418,7 +426,8 @@
     for (const p of passives) {
       const sk = SKILLS.find(s => s.name === p.name);
       const prof = char.skillProficiencies.includes(sk.name);
-      const mod = abilityMod(char.abilities[sk.ability]) + (prof ? char.profBonus : 0);
+      const customBonus = char.skillBonuses && char.skillBonuses[sk.name] ? char.skillBonuses[sk.name] : 0;
+      const mod = abilityMod(char.abilities[sk.ability]) + (prof ? char.profBonus : 0) + customBonus;
       const score = 10 + mod;
       
       const row = document.createElement('div');
@@ -560,11 +569,11 @@
       const genitiveName = SKILLS_GENITIVE_I18N[currentLang][skillRollName];
       titleStr = currentLang === 'ru' ? `${t.checkOf} ${genitiveName} — ${total}` : `${genitiveName} ${t.checkOf} — ${total}`;
     } else if (skillRollType === 'check') {
-      const abName = ABILITY_FULL_I18N[currentLang][skillRollName];
-      titleStr = currentLang === 'ru' ? `Проверка: ${abName} — ${total}` : `Ability Check: ${abName} — ${total}`;
+      const abName = ABILITY_GENITIVE_I18N[currentLang][skillRollName];
+      titleStr = currentLang === 'ru' ? `Проверка ${abName} — ${total}` : `Ability Check: ${abName} — ${total}`;
     } else if (skillRollType === 'save') {
-      const abName = ABILITY_FULL_I18N[currentLang][skillRollName];
-      titleStr = currentLang === 'ru' ? `Спасбросок: ${abName} — ${total}` : `Saving Throw: ${abName} — ${total}`;
+      const abName = ABILITY_GENITIVE_I18N[currentLang][skillRollName];
+      titleStr = currentLang === 'ru' ? `Спасбросок ${abName} — ${total}` : `Saving Throw: ${abName} — ${total}`;
     }
 
     if (d20 === 20) titleStr = `🔥 ${titleStr} 🔥`;
@@ -693,6 +702,33 @@
         buildAbilityGrid(char);
         buildSkillsList(char);
         buildPassivesList(char);
+      }
+    });
+
+    // Custom skill bonus
+    $('#skills-list').addEventListener('input', (e) => {
+      if (e.target.matches('.skill-bonus-input')) {
+        const char = getActiveChar();
+        if (!char) return;
+        if (!char.skillBonuses) char.skillBonuses = {};
+        const sk = e.target.dataset.skillBonus;
+        const val = parseInt(e.target.value) || 0;
+        char.skillBonuses[sk] = val;
+        
+        const prof = char.skillProficiencies.includes(sk);
+        const abilityKey = SKILLS.find(s => s.name === sk).ability;
+        const statMod = abilityMod(char.abilities[abilityKey]);
+        const mod = statMod + (prof ? char.profBonus : 0) + val;
+        
+        const btn = e.target.nextElementSibling;
+        if (btn && btn.classList.contains('skill-roll-btn')) {
+          btn.dataset.skillMod = mod;
+          btn.textContent = modStr(mod);
+          btn.title = `Roll d20 ${modStr(mod)}`;
+        }
+        
+        saveData();
+        buildPassivesList(char); // Update passive senses
       }
     });
 
