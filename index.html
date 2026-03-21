@@ -15,7 +15,7 @@
   <!-- ═══ CHARACTER LIST VIEW ═══ -->
   <div id="view-list" class="view active">
     <header class="list-header">
-      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.10</span></h1>
+      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.11</span></h1>
       <p class="app-subtitle" data-i18n="subtitle">Manage your heroes</p>
     </header>
 
@@ -100,10 +100,13 @@
       </div>
     </section>
 
-    <!-- Passive Senses -->
+    <!-- Attacks & Formulas -->
     <section class="sheet-section">
-      <h2 class="section-title" data-i18n="passiveSenses">Passive Senses</h2>
-      <div class="passives-list" id="passives-list">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">
+        <h2 class="section-title" data-i18n="attacks" style="margin-bottom: 0; border: none; padding: 0;">Attacks & Formulas</h2>
+        <button class="btn btn-ghost" id="btn-add-attack" style="padding: 2px 8px; font-size: 0.8rem; border: 1px solid var(--border);">+ Add</button>
+      </div>
+      <div class="attacks-list" id="attacks-list" style="display: flex; flex-direction: column; gap: 8px;">
         <!-- Injected by JS -->
       </div>
     </section>

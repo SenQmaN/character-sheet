@@ -26,7 +26,7 @@
       abilityScores: 'Ability Scores',
       savingThrows: 'Saving Throws',
       skills: 'Skills',
-      passiveSenses: 'Passive Senses',
+      attacks: 'Attacks & Formulas',
       checkBtn: 'Check',
       saveBtn: 'Save',
 
@@ -57,7 +57,7 @@
       abilityScores: 'Характеристики',
       savingThrows: 'Спасброски',
       skills: 'Навыки',
-      passiveSenses: 'Пассивные чувства',
+      attacks: 'Атаки и формулы',
       checkBtn: 'Проверка',
       saveBtn: 'Спасбросок',
 
@@ -227,6 +227,7 @@
       skillProficiencies: [],
       savingThrowProficiencies: [],
       skillBonuses: {},
+      attacks: [],
       profBonus: 2,
       text: { notes: '' },
     };
@@ -314,7 +315,7 @@
 
     buildAbilityGrid(char);
     buildSkillsList(char);
-    buildPassivesList(char);
+    buildAttacksList(char);
 
     $('#text-notes').value = char.text.notes || '';
 
@@ -413,39 +414,28 @@
     }
   }
 
-  // ── Passive Senses ────────────────────────────────
-  function buildPassivesList(char) {
-    const list = $('#passives-list');
+  // ── Attacks & Formulas ────────────────────────────
+  function buildAttacksList(char) {
+    const list = $('#attacks-list');
     if (!list) return;
     list.innerHTML = '';
-    const passives = [
-      { name: 'Perception', label: currentLang === 'ru' ? 'МУДРОСТЬ (ВОСПРИЯТИЕ)' : 'WISDOM (PERCEPTION)' },
-      { name: 'Insight', label: currentLang === 'ru' ? 'МУДРОСТЬ (ПРОНИЦАТЕЛЬНОСТЬ)' : 'WISDOM (INSIGHT)' },
-      { name: 'Investigation', label: currentLang === 'ru' ? 'ИНТЕЛЛЕКТ (АНАЛИЗ)' : 'INTELLIGENCE (INVESTIGATION)' }
-    ];
-    for (const p of passives) {
-      const sk = SKILLS.find(s => s.name === p.name);
-      const prof = char.skillProficiencies.includes(sk.name);
-      const customBonus = char.skillBonuses && char.skillBonuses[sk.name] ? char.skillBonuses[sk.name] : 0;
-      const mod = (prof ? char.profBonus : 0) + customBonus;
-      const score = 10 + mod;
-      
+    
+    if (!char.attacks) char.attacks = [];
+    
+    char.attacks.forEach((atk, i) => {
       const row = document.createElement('div');
-      row.className = 'passive-row';
       row.style.display = 'flex';
-      row.style.background = '#1a1a24';
-      row.style.border = '1px solid #333344';
-      row.style.borderRadius = '4px';
-      row.style.marginBottom = '6px';
-      row.style.padding = '6px 10px';
+      row.style.gap = '8px';
       row.style.alignItems = 'center';
-
+      
       row.innerHTML = `
-        <div style="font-weight:bold; font-size:16px; min-width:30px; text-align:center; padding-right:10px; border-right:1px solid #333344; margin-right:10px;">${score}</div>
-        <div style="font-size:12px; font-weight:600; letter-spacing:0.5px; opacity:0.8;">${p.label}</div>
+        <input type="text" class="attack-name-input" data-attack-id="${i}" value="${atk.name || ''}" placeholder="Attack Name" />
+        <span style="color:var(--text-sec); font-weight:bold;">:</span>
+        <input type="text" class="attack-formula-input" data-attack-id="${i}" value="${atk.formula || ''}" placeholder="e.g. 1d8+[STR]" />
+        <button class="btn-delete-attack" data-attack-id="${i}" title="Remove">✕</button>
       `;
       list.appendChild(row);
-    }
+    });
   }
 
   // ── Skill Roll Modal State ────────────────────────
@@ -671,7 +661,6 @@
       document.querySelector(`[data-ability-mod="${ab}"]`).textContent = modStr(mod);
       saveData();
       buildSkillsList(char);
-      buildPassivesList(char);
     });
 
     // Skill & Save proficiencies (delegated)
@@ -687,7 +676,6 @@
         }
         saveData();
         buildSkillsList(char);
-        buildPassivesList(char);
       } else if (e.target.matches('[data-save-prof]')) {
         const char = getActiveChar();
         if (!char) return;
@@ -701,7 +689,6 @@
         saveData();
         buildAbilityGrid(char);
         buildSkillsList(char);
-        buildPassivesList(char);
       }
     });
 
@@ -726,7 +713,40 @@
         }
         
         saveData();
-        buildPassivesList(char); // Update passive senses
+      }
+    });
+
+    // Attacks & Formulas
+    $('#btn-add-attack').addEventListener('click', () => {
+      const char = getActiveChar();
+      if (!char) return;
+      if (!char.attacks) char.attacks = [];
+      char.attacks.push({ name: '', formula: '' });
+      saveData();
+      buildAttacksList(char);
+    });
+
+    $('#attacks-list').addEventListener('input', (e) => {
+      if (e.target.matches('.attack-name-input') || e.target.matches('.attack-formula-input')) {
+        const char = getActiveChar();
+        const id = parseInt(e.target.dataset.attackId);
+        if (char && char.attacks && char.attacks[id]) {
+          if (e.target.matches('.attack-name-input')) char.attacks[id].name = e.target.value;
+          else char.attacks[id].formula = e.target.value;
+          saveData();
+        }
+      }
+    });
+
+    $('#attacks-list').addEventListener('click', (e) => {
+      if (e.target.matches('.btn-delete-attack')) {
+        const char = getActiveChar();
+        const id = parseInt(e.target.dataset.attackId);
+        if (char && char.attacks) {
+          char.attacks.splice(id, 1);
+          saveData();
+          buildAttacksList(char);
+        }
       }
     });
 
