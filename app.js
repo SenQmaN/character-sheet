@@ -39,7 +39,7 @@
       selectResult: 'Select result',
       dieNum: 'Die #',
       skillCheck: 'Skill Check',
-      checkOf: 'CHECK',
+      checkOf: 'Check',
     },
     ru: {
       subtitle: 'Управляйте своими героями',
@@ -67,7 +67,7 @@
       selectResult: 'Выберите результат',
       dieNum: 'Кость №',
       skillCheck: 'Проверка навыка',
-      checkOf: 'ПРОВЕРКА',
+      checkOf: 'Проверка',
     },
   };
 
@@ -79,6 +79,11 @@
   const SKILLS_I18N = {
     en: { 'Acrobatics': 'Acrobatics', 'Animal Handling': 'Animal Handling', 'Arcana': 'Arcana', 'Athletics': 'Athletics', 'Deception': 'Deception', 'History': 'History', 'Insight': 'Insight', 'Intimidation': 'Intimidation', 'Investigation': 'Investigation', 'Medicine': 'Medicine', 'Nature': 'Nature', 'Perception': 'Perception', 'Performance': 'Performance', 'Persuasion': 'Persuasion', 'Religion': 'Religion', 'Sleight of Hand': 'Sleight of Hand', 'Stealth': 'Stealth', 'Survival': 'Survival' },
     ru: { 'Acrobatics': 'Акробатика', 'Animal Handling': 'Уход за животными', 'Arcana': 'Магия', 'Athletics': 'Атлетика', 'Deception': 'Обман', 'History': 'История', 'Insight': 'Проницательность', 'Intimidation': 'Запугивание', 'Investigation': 'Анализ', 'Medicine': 'Медицина', 'Nature': 'Природа', 'Perception': 'Восприятие', 'Performance': 'Выступление', 'Persuasion': 'Убеждение', 'Religion': 'Религия', 'Sleight of Hand': 'Ловкость рук', 'Stealth': 'Скрытность', 'Survival': 'Выживание' },
+  };
+
+  const SKILLS_GENITIVE_I18N = {
+    en: { 'Acrobatics': 'Acrobatics', 'Animal Handling': 'Animal Handling', 'Arcana': 'Arcana', 'Athletics': 'Athletics', 'Deception': 'Deception', 'History': 'History', 'Insight': 'Insight', 'Intimidation': 'Intimidation', 'Investigation': 'Investigation', 'Medicine': 'Medicine', 'Nature': 'Nature', 'Perception': 'Perception', 'Performance': 'Performance', 'Persuasion': 'Persuasion', 'Religion': 'Religion', 'Sleight of Hand': 'Sleight of Hand', 'Stealth': 'Stealth', 'Survival': 'Survival' },
+    ru: { 'Acrobatics': 'Акробатики', 'Animal Handling': 'Ухода за животными', 'Arcana': 'Магии', 'Athletics': 'Атлетики', 'Deception': 'Обмана', 'History': 'Истории', 'Insight': 'Проницательности', 'Intimidation': 'Запугивания', 'Investigation': 'Анализа', 'Medicine': 'Медицины', 'Nature': 'Природы', 'Perception': 'Восприятия', 'Performance': 'Выступления', 'Persuasion': 'Убеждения', 'Religion': 'Религии', 'Sleight of Hand': 'Ловкости рук', 'Stealth': 'Скрытности', 'Survival': 'Выживания' },
   };
 
   const ABILITIES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
@@ -477,7 +482,7 @@
     const d20 = skillRollD20;
     const mod = skillRollSelectedMod;
     const total = d20 + mod;
-    const skillDisplayName = SKILLS_I18N[currentLang][skillRollName].toUpperCase();
+    const skillGenitiveName = SKILLS_GENITIVE_I18N[currentLang][skillRollName];
     const t = TRANSLATIONS[currentLang];
 
     // Breakdown: (17) – 5  or  (17) + 3
@@ -490,14 +495,14 @@
     if (mod > 0) formulaStr += ` + ${mod}`;
     else if (mod < 0) formulaStr += ` – ${Math.abs(mod)}`;
 
-    let titleStr = `${t.checkOf} ${skillDisplayName} — ${total}`;
+    let titleStr = currentLang === 'ru' ? `${t.checkOf} ${skillGenitiveName} — ${total}` : `${skillGenitiveName} ${t.checkOf} — ${total}`;
     if (d20 === 20) titleStr = `🔥 ${titleStr} 🔥`;
     if (d20 === 1) titleStr = `🩸 ${titleStr} 🩸`;
 
     const embed = {
       author: { name: char.name },
       title: titleStr,
-      description: `${breakdownStr}\n\n${formulaStr}`,
+      description: `${breakdownStr}\n\n-# ${formulaStr}`,
       color: 0x5865F2,
     };
 
@@ -840,7 +845,7 @@
     const embed = {
       author: { name: char.name },
       title: titleStr,
-      description: `${breakdownStr}\n\n${formulaStr}`,
+      description: `${breakdownStr}\n\n-# ${formulaStr}`,
       color: 0x5865F2,
     };
 
