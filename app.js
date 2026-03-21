@@ -392,7 +392,7 @@
       for (const sk of skillsInAb) {
         const prof = char.skillProficiencies.includes(sk.name);
         const customBonus = char.skillBonuses && char.skillBonuses[sk.name] ? char.skillBonuses[sk.name] : 0;
-        const mod = abilityMod(char.abilities[sk.ability]) + (prof ? char.profBonus : 0) + customBonus;
+        const mod = (prof ? char.profBonus : 0) + customBonus;
         const row = document.createElement('div');
         row.className = 'skill-row';
         row.innerHTML = `
@@ -427,7 +427,7 @@
       const sk = SKILLS.find(s => s.name === p.name);
       const prof = char.skillProficiencies.includes(sk.name);
       const customBonus = char.skillBonuses && char.skillBonuses[sk.name] ? char.skillBonuses[sk.name] : 0;
-      const mod = abilityMod(char.abilities[sk.ability]) + (prof ? char.profBonus : 0) + customBonus;
+      const mod = (prof ? char.profBonus : 0) + customBonus;
       const score = 10 + mod;
       
       const row = document.createElement('div');
@@ -716,9 +716,7 @@
         char.skillBonuses[sk] = val;
         
         const prof = char.skillProficiencies.includes(sk);
-        const abilityKey = SKILLS.find(s => s.name === sk).ability;
-        const statMod = abilityMod(char.abilities[abilityKey]);
-        const mod = statMod + (prof ? char.profBonus : 0) + val;
+        const mod = (prof ? char.profBonus : 0) + val;
         
         const btn = e.target.nextElementSibling;
         if (btn && btn.classList.contains('skill-roll-btn')) {
