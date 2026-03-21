@@ -708,34 +708,23 @@
        return;
     }
 
+    const t = TRANSLATIONS[currentLang];
+
     currentAttackSegments.forEach((seg, sIdx) => {
       const segBlock = document.createElement('div');
       segBlock.style.marginBottom = '20px';
-      segBlock.style.padding = '12px 16px';
-      segBlock.style.background = 'var(--bg-alt)';
-      segBlock.style.border = '1px solid var(--border)';
-      segBlock.style.borderRadius = 'var(--radius-sm)';
       
       let allReady = true;
       let segSum = seg.staticMod;
       const headerDiv = document.createElement('div');
-      headerDiv.style.display = 'flex';
-      headerDiv.style.justifyContent = 'space-between';
-      headerDiv.style.alignItems = 'center';
-      headerDiv.style.marginBottom = '12px';
-      headerDiv.style.borderBottom = '1px solid var(--border)';
-      headerDiv.style.paddingBottom = '6px';
-      headerDiv.innerHTML = `<h3 style="color:var(--text); font-size:15px; font-weight:600;">${seg.cleanLabel}</h3>`;
-      const sumIndicator = document.createElement('div');
-      sumIndicator.style.fontWeight = '700';
-      sumIndicator.style.fontSize = '16px';
-      sumIndicator.style.color = 'var(--text-dim)';
-      headerDiv.appendChild(sumIndicator);
+      headerDiv.className = 'dice-formula';
+      headerDiv.style.marginBottom = '16px';
+      headerDiv.innerHTML = `${seg.cleanLabel} <span class="attack-seg-sum" style="opacity:0.6;font-size:0.8em;font-weight:normal;"></span>`;
       segBlock.appendChild(headerDiv);
 
       seg.diceList.forEach((dGroup, gIdx) => {
         const groupDiv = document.createElement('div');
-        groupDiv.style.marginBottom = '10px';
+        groupDiv.style.marginBottom = '12px';
         
         for (let i = 0; i < dGroup.count; i++) {
           const val = dGroup.results[i];
@@ -743,15 +732,16 @@
           else segSum += val;
 
           const rowDiv = document.createElement('div');
-          rowDiv.style.marginBottom = '6px';
-          rowDiv.innerHTML = `<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">d${dGroup.sides} #${i+1}</div>`;
+          rowDiv.style.marginBottom = '10px';
+          const dNot = currentLang === 'ru' ? 'к' : 'd';
+          rowDiv.innerHTML = `<div style="font-size:13px; font-weight: 700; color:var(--text-sec); margin-bottom:8px;">${t.dieNum}${i+1} (${dNot}${dGroup.sides})</div>`;
           
           const grid = document.createElement('div');
-          grid.className = 'dice-result-grid';
+          grid.className = 'dice-number-grid';
           
           for (let n = 1; n <= dGroup.sides; n++) {
             const btn = document.createElement('button');
-            btn.className = 'dice-result-btn' + (val === n ? ' selected' : '');
+            btn.className = 'dice-num-btn' + (val === n ? ' selected' : '');
             btn.textContent = n;
             btn.addEventListener('click', () => {
               dGroup.results[i] = n;
@@ -765,8 +755,8 @@
         segBlock.appendChild(groupDiv);
       });
       
-      sumIndicator.style.color = allReady ? 'var(--gold-light)' : 'var(--text-dim)';
-      sumIndicator.textContent = `Total: ${allReady ? segSum : '?'}`;
+      const sumSpan = headerDiv.querySelector('.attack-seg-sum');
+      sumSpan.textContent = allReady ? `(Total: ${segSum})` : '';
       
       area.appendChild(segBlock);
     });
