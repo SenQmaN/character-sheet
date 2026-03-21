@@ -235,7 +235,15 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .death-check input:checked ~ .checkmark.fail { background: var(--red); border-color: var(--red); }
 
 /* ── Saves & Skills Lists ─────────────────────────── */
-.saves-list, .skills-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.saves-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+
+.skills-list { display: flex; flex-direction: column; gap: 16px; }
+.skill-group-title {
+  font-family: var(--font-heading); font-size: 0.9rem; font-weight: 700;
+  color: var(--gold-light); margin-bottom: 8px; border-bottom: 1px solid var(--border);
+  padding-bottom: 4px; text-transform: uppercase; letter-spacing: 1px;
+}
+.skills-sublist { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
 .save-row, .skill-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: var(--radius-xs); transition: background var(--transition); }
 .save-row:hover, .skill-row:hover { background: var(--bg-hover); }
 .save-check, .skill-check { position: relative; cursor: pointer; }

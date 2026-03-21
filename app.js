@@ -361,22 +361,47 @@
   function buildSkillsList(char) {
     const list = $('#skills-list');
     list.innerHTML = '';
+    
+    const grouped = {};
     for (const sk of SKILLS) {
-      const prof = char.skillProficiencies.includes(sk.name);
-      const mod = abilityMod(char.abilities[sk.ability]) + (prof ? char.profBonus : 0);
-      const row = document.createElement('div');
-      row.className = 'skill-row';
-      row.innerHTML = `
-        <label class="skill-check">
-          <input type="checkbox" data-skill="${sk.name}" ${prof ? 'checked' : ''} />
-          <span class="dot"></span>
-        </label>
-        <span class="skill-name">${SKILLS_I18N[currentLang][sk.name]} <small style="color:var(--text-dim)">(${sk.ability})</small></span>
-        <button class="skill-roll-btn" data-skill-roll="${sk.name}" data-skill-mod="${mod}" title="Roll d20 ${modStr(mod)}">
-          ${modStr(mod)}
-        </button>
-      `;
-      list.appendChild(row);
+      if (!grouped[sk.ability]) grouped[sk.ability] = [];
+      grouped[sk.ability].push(sk);
+    }
+    
+    for (const ab of ABILITIES) {
+      const skillsInAb = grouped[ab] || [];
+      if (skillsInAb.length === 0) continue;
+      
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'skill-group';
+      
+      const groupTitle = document.createElement('h3');
+      groupTitle.className = 'skill-group-title';
+      groupTitle.textContent = ABILITY_FULL_I18N[currentLang][ab];
+      groupDiv.appendChild(groupTitle);
+      
+      const subList = document.createElement('div');
+      subList.className = 'skills-sublist';
+      
+      for (const sk of skillsInAb) {
+        const prof = char.skillProficiencies.includes(sk.name);
+        const mod = abilityMod(char.abilities[sk.ability]) + (prof ? char.profBonus : 0);
+        const row = document.createElement('div');
+        row.className = 'skill-row';
+        row.innerHTML = `
+          <label class="skill-check">
+            <input type="checkbox" data-skill="${sk.name}" ${prof ? 'checked' : ''} />
+            <span class="dot"></span>
+          </label>
+          <span class="skill-name">${SKILLS_I18N[currentLang][sk.name]}</span>
+          <button class="skill-roll-btn" data-skill-roll="${sk.name}" data-skill-mod="${mod}" title="Roll d20 ${modStr(mod)}">
+            ${modStr(mod)}
+          </button>
+        `;
+        subList.appendChild(row);
+      }
+      groupDiv.appendChild(subList);
+      list.appendChild(groupDiv);
     }
   }
 
@@ -929,13 +954,13 @@
     let formulaParts = [];
     MULTI_DICE_TYPES.forEach(d => {
       if (multiDiceCounts[d] > 0) {
-        formulaParts.push(`${multiDiceCounts[d]}${dNotation}${d}`);
+        formulaParts.push(`(${multiDiceCounts[d]}${dNotation}${d})`);
         const vals = diceResults.filter(res => res.type === d).map(res => res.value);
-        breakdownParts.push(`**${multiDiceCounts[d]}${dNotation}${d}**: ${vals.join(', ')}`);
+        breakdownParts.push(`(${vals.join(' + ')})`);
       }
     });
 
-    const breakdownStr = breakdownParts.join('\n');
+    const breakdownStr = breakdownParts.join(' + ');
     const formulaStr = formulaParts.join(' + ');
     const t = TRANSLATIONS[currentLang];
     
