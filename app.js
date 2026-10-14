@@ -1315,9 +1315,13 @@
     
     let titleStr = currentLang === 'ru' ? `Бросок — ${total}` : `Roll — ${total}`;
     
-    const has1 = diceResults.some(d => d.type === 20 && d.value === 1);
-    
-    if (has1) {
+    const isSingleRoll = diceResults.length === 1;
+    const has20 = isSingleRoll && diceResults.some(d => d.type === 20 && d.value === 20);
+    const has1 = isSingleRoll && diceResults.some(d => d.type === 20 && d.value === 1);
+
+    if (has20) {
+      titleStr = `🔥 ${titleStr} 🔥`;
+    } else if (has1) {
       titleStr = `🩸 ${titleStr} 🩸`;
     }
 
