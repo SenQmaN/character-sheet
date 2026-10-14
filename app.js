@@ -589,7 +589,7 @@
     else if (mod < 0) breakdownStr += ` – ${Math.abs(mod)}`;
 
     // Formula: (1к20) – 5
-    let formulaStr = currentLang === 'ru' ? '(1к20)' : '(1d20)';
+    let formulaStr = currentLang === 'ru' ? '(1d20)' : '(1d20)';
     if (mod > 0) formulaStr += ` + ${mod}`;
     else if (mod < 0) formulaStr += ` – ${Math.abs(mod)}`;
 
@@ -771,7 +771,7 @@
 
           const rowDiv = document.createElement('div');
           rowDiv.style.marginBottom = '10px';
-          const dNot = currentLang === 'ru' ? 'к' : 'd';
+          const dNot = currentLang === 'ru' ? 'd' : 'd';
           rowDiv.innerHTML = `<div style="font-size:13px; font-weight: 700; color:var(--text-sec); margin-bottom:8px;">${t.dieNum}${i+1} (${dNot}${dGroup.sides})</div>`;
           
           const grid = document.createElement('div');
@@ -837,7 +837,7 @@
           
           let f = '';
           seg.diceList.forEach(g => {
-            const dNot = currentLang === 'ru' ? 'к' : 'd';
+            const dNot = currentLang === 'ru' ? 'd' : 'd';
             f += (f ? ' + ' : '') + `(${g.count}${dNot}${g.sides})`;
           });
           if (seg.staticMod > 0) f = f ? `${f} + ${seg.staticMod}` : `${seg.staticMod}`;
@@ -870,7 +870,7 @@
           seg.diceList.forEach(g => {
             allDiceVals.push(...g.results);
             segSum += g.results.reduce((a, b) => a + b, 0);
-            const dNot = currentLang === 'ru' ? 'к' : 'd';
+            const dNot = currentLang === 'ru' ? 'd' : 'd';
             f += (f ? ' + ' : '') + `(${g.count}${dNot}${g.sides})`;
           });
           
@@ -1297,7 +1297,7 @@
     if (diceResults.length === 0 || !diceResults.every(d => d.value !== null)) return;
 
     const total = diceResults.reduce((sum, d) => sum + d.value, 0);
-    const dNotation = currentLang === 'ru' ? 'к' : 'd';
+    const dNotation = currentLang === 'ru' ? 'd' : 'd';
     
     let breakdownParts = [];
     let formulaParts = [];
@@ -1315,12 +1315,9 @@
     
     let titleStr = currentLang === 'ru' ? `Бросок — ${total}` : `Roll — ${total}`;
     
-    const has20 = diceResults.some(d => d.type === 20 && d.value === 20);
     const has1 = diceResults.some(d => d.type === 20 && d.value === 1);
     
-    if (has20) {
-      titleStr = `🔥 ${titleStr} 🔥`;
-    } else if (has1) {
+    if (has1) {
       titleStr = `🩸 ${titleStr} 🩸`;
     }
 
