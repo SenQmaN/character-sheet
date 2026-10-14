@@ -46,6 +46,7 @@
       dieNum: 'Die #',
       skillCheck: 'Skill Check',
       checkOf: 'Check',
+      importJson: 'Import from JSON',
     },
     ru: {
       subtitle: 'Управляйте своими героями',
@@ -77,6 +78,7 @@
       dieNum: 'Кость №',
       skillCheck: 'Проверка навыка',
       checkOf: 'Проверка',
+      importJson: 'Импорт из JSON',
     },
   };
 
@@ -269,6 +271,83 @@
       profBonus: 2,
       text: { notes: '' },
     };
+  }
+
+  // ── Import Character from LSS JSON ─────────────────
+  async function importCharFromLSS(file) {
+    try {
+      const text = await file.text();
+      const outer = JSON.parse(text);
+
+      // LSS format: character data is a JSON string stored in the 'data' field
+      let cd;
+      if (outer.data && typeof outer.data === 'string') {
+        cd = JSON.parse(outer.data);
+      } else if (outer.data && typeof outer.data === 'object') {
+        cd = outer.data;
+      } else {
+        throw new Error('Unrecognized JSON structure');
+      }
+
+      const char = createDefaultChar();
+
+      // ── Basic info ──────────────────────────────────
+      char.name  = cd.name?.value          || 'Imported Character';
+      char.class = cd.info?.charClass?.value || '';
+      char.level = cd.info?.level?.value   ?? 1;
+      char.race  = cd.info?.race?.value    || '';
+      if (typeof cd.proficiency === 'number') char.profBonus = cd.proficiency;
+
+      // ── Ability scores ──────────────────────────────
+      const statMap = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' };
+      if (cd.stats) {
+        for (const [lssKey, appKey] of Object.entries(statMap)) {
+          const score = cd.stats[lssKey]?.score;
+          if (typeof score === 'number') char.abilities[appKey] = score;
+        }
+      }
+
+      // ── Avatar (use for pfpUrl / Discord thumbnail) ─
+      const avatarUrl = cd.avatar?.jpeg || cd.avatar?.webp || '';
+      if (avatarUrl) {
+        char.pfpUrl = avatarUrl;
+        char.pfp    = avatarUrl;
+      }
+
+      // ── Skills: proficiencies + custom modifiers ────
+      if (cd.skills) {
+        for (const [lssName, skillData] of Object.entries(cd.skills)) {
+          // Title-case LSS skill name to match app format ('sleight of hand' → 'Sleight of Hand')
+          const appName = lssName.replace(/\b\w/g, c => c.toUpperCase());
+          if (!SKILLS.find(s => s.name === appName)) continue;
+
+          if (skillData.isProf) {
+            char.skillProficiencies.push(appName);
+          }
+          if (typeof skillData.customModifier === 'number') {
+            char.skillBonuses[appName] = skillData.customModifier;
+          }
+        }
+      }
+
+      // ── Saving throw proficiencies ──────────────────
+      if (cd.saves) {
+        for (const [lssKey, saveData] of Object.entries(cd.saves)) {
+          if (saveData.isProf) {
+            const appKey = statMap[lssKey];
+            if (appKey) char.savingThrowProficiencies.push(appKey);
+          }
+        }
+      }
+
+      characters.push(char);
+      saveData();
+      showSheet(char.id);
+    } catch (err) {
+      alert(currentLang === 'ru'
+        ? 'Ошибка при импорте: ' + err.message
+        : 'Import error: ' + err.message);
+    }
   }
 
   // ── Helpers ───────────────────────────────────────
@@ -1607,6 +1686,16 @@
       characters.push(char);
       saveData();
       showSheet(char.id);
+    });
+
+    const importInput = $('#import-json-input');
+    $('#btn-import-json').addEventListener('click', () => importInput.click());
+    importInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        importCharFromLSS(file);
+        importInput.value = ''; // reset so same file can be re-imported
+      }
     });
 
     // Language toggles (both list and sheet)

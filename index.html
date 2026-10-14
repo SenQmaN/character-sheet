@@ -15,7 +15,7 @@
   <!-- ═══ CHARACTER LIST VIEW ═══ -->
   <div id="view-list" class="view active">
     <header class="list-header">
-      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.20</span></h1>
+      <h1 class="app-title">D&D Characters <span style="font-size: 14px; color: var(--text-dim); font-weight: 500;">v1.21</span></h1>
       <p class="app-subtitle" data-i18n="subtitle">Manage your heroes</p>
     </header>
 
@@ -23,6 +23,10 @@
       <button class="btn btn-primary" id="btn-create-char">
         <span class="btn-icon">＋</span> <span data-i18n="newChar">New Character</span>
       </button>
+      <button class="btn btn-ghost" id="btn-import-json">
+        <span class="btn-icon">📂</span> <span data-i18n="importJson">Import from JSON</span>
+      </button>
+      <input type="file" id="import-json-input" accept=".json" style="display:none" />
       <button class="btn btn-ghost" id="btn-webhook-global">
         <span class="btn-icon">⚙</span> <span data-i18n="webhookSettings">Webhook Settings</span>
       </button>
